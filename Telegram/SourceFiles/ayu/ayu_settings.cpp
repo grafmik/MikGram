@@ -1062,6 +1062,23 @@ void AyuSettings::setSingleCornerRadius(bool val) {
 	save();
 }
 
+int AyuSettings::dialogColor(uint64 peerId) const {
+	const auto it = _dialogColors.find(peerId);
+	return (it != _dialogColors.end()) ? it->second : -1;
+}
+
+void AyuSettings::setDialogColor(uint64 peerId, int colorIndex) {
+	if (colorIndex < 0) {
+		if (_dialogColors.erase(peerId) == 0) return;
+	} else {
+		const auto it = _dialogColors.find(peerId);
+		if (it != _dialogColors.end() && it->second == colorIndex) return;
+		_dialogColors[peerId] = colorIndex;
+	}
+	repaintApp();
+	save();
+}
+
 void AyuSettings::setStreamerMode(bool val) {
 	if (_streamerMode.current() == val) return;
 	_streamerMode = val;
@@ -1167,6 +1184,12 @@ void to_json(nlohmann::json &j, const AyuSettings &s) {
 		{"streamerMode", s._streamerMode.current()},
 		{"messageShotSettings", s._messageShotSettings}
 	};
+
+	auto dialogColors = nlohmann::json::object();
+	for (const auto &[peerId, colorIndex] : s._dialogColors) {
+		dialogColors[std::to_string(peerId)] = colorIndex;
+	}
+	j["dialogColors"] = std::move(dialogColors);
 }
 
 void from_json(const nlohmann::json &j, AyuSettings &s) {
@@ -1178,6 +1201,15 @@ void from_json(const nlohmann::json &j, AyuSettings &s) {
 			auto account = std::make_unique<GhostModeAccountSettings>();
 			value.get_to(*account);
 			s._ghostAccounts[std::stoull(key)] = std::move(account);
+		}
+	}
+
+	s._dialogColors.clear();
+	if (j.contains("dialogColors") && j["dialogColors"].is_object()) {
+		for (auto &[key, value] : j["dialogColors"].items()) {
+			if (value.is_number_integer()) {
+				s._dialogColors[std::stoull(key)] = value.get<int>();
+			}
 		}
 	}
 

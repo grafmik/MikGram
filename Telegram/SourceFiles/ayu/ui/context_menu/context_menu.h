@@ -26,6 +26,10 @@ void AddAyuGramActions(PeerData *peerData,
 							   not_null<Window::SessionController*> sessionController,
 							   const Window::PeerMenuCallback &addCallback);
 
+void AddDialogColorAction(PeerData *peerData,
+						  not_null<Window::SessionController*> sessionController,
+						  const Window::PeerMenuCallback &addCallback);
+
 void AddJumpToBeginningAction(PeerData *peerData,
 							  Data::Thread *thread,
 							  not_null<Window::SessionController*> sessionController,

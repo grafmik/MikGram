@@ -53,6 +53,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/features/filters/filters_controller.h"
+#include "ayu/ayu_settings.h"
+#include "ayu/ui/boxes/dialog_color_box.h"
 #include "styles/style_ayu_icons.h"
 
 
@@ -494,6 +496,20 @@ void PaintRow(
 		p.translate(-swipeTranslation, 0);
 	}
 	p.fillRect(geometry, bg);
+	// AyuGram: per-conversation custom background tint (idle state only, so the
+	// theme's hover/active highlight stays intact for selection visibility).
+	if (history && !fakeRow && !context.active && !context.selected) {
+		const auto colorIndex = AyuSettings::getInstance().dialogColor(
+			history->peer->id.value);
+		if (colorIndex >= 0) {
+			const auto &ayuPalette = AyuUi::DialogColorPalette();
+			if (colorIndex < int(ayuPalette.size())) {
+				auto tint = ayuPalette[colorIndex];
+				tint.setAlpha(56);
+				p.fillRect(geometry, tint);
+			}
+		}
+	}
 	if (!(flags & Flag::TopicJumpRipple)) {
 		auto ripple = context.active
 			? st::dialogsRippleBgActive

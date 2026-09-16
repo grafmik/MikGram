@@ -1866,6 +1866,7 @@ void Filler::fillContextMenuActions() {
 			addBlockUser();
 		}
 	}
+	AyuUi::AddDialogColorAction(_peer, _controller, _addAction);
 	addClearHistory();
 	AyuUi::AddDeleteOwnMessagesAction(_peer, _topic, _controller, _addAction);
 	addDeleteChat();

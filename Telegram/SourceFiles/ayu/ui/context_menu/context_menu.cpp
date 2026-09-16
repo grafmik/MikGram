@@ -12,6 +12,7 @@
 #include "api/api_sending.h"
 #include "ayu/ayu_settings.h"
 #include "ayu/ayu_state.h"
+#include "ayu/ui/boxes/dialog_color_box.h"
 #include "ayu/data/messages_storage.h"
 #include "ayu/features/filters/filters_controller.h"
 #include "ayu/features/forward/ayu_forward.h"
@@ -321,6 +322,19 @@ void AddAyuGramActions(PeerData *peerData,
 				});
 			}
 		},
+	});
+}
+
+void AddDialogColorAction(PeerData *peerData,
+						  not_null<Window::SessionController*> sessionController,
+						  const Window::PeerMenuCallback &addCallback) {
+	if (!peerData) {
+		return;
+	}
+	addCallback(Window::PeerMenuCallback::Args{
+		.text = QString::fromUtf8("Couleur de fond"),
+		.handler = [=] { ShowDialogColorBox(sessionController, peerData); },
+		.icon = &st::menuIconPalette,
 	});
 }
 
