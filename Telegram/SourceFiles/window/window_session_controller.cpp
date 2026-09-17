@@ -1929,6 +1929,9 @@ void SessionController::init() {
 }
 
 void SessionController::setupScreenshotProtection() {
+	// MikGram: like AyuGram's no-forwards bypass, "restrict saving" chats
+	// don't block screenshots.
+	return;
 	Core::App().screenshotProtection().addAmbientReason(activeChatValue(
 	) | rpl::map([](Dialogs::Key key) {
 		const auto peer = key.peer();
