@@ -176,6 +176,18 @@ void AyuLanguage::fetchError(QNetworkReply::NetworkError e) {
 }
 
 void AyuLanguage::applyLanguageJson(QJsonDocument doc) {
+	// MikGram: rename the app in these strings only, credits to AyuGram stay.
+	static const auto kMikGramRenamedKeys = std::array{
+		qsl("ayu_AyuPreferences"),
+		qsl("ayu_KeepAliveService"),
+		qsl("ayu_ResetSettingsConfirmation"),
+		qsl("ayu_ExportDataTitle"),
+		qsl("ayu_ImportDataTitle"),
+		qsl("ayu_AyuAttachments"),
+		qsl("ayu_AyuDatabase"),
+		qsl("ayu_PluginsNotAvailable"),
+		qsl("ayu_IntroAbout"),
+	};
 	const auto json = doc.object();
 	for (const QString &brokenKey : json.keys()) {
 		auto key = qsl("ayu_") + brokenKey;
@@ -204,6 +216,11 @@ void AyuLanguage::applyLanguageJson(QJsonDocument doc) {
 			val = val.replace(qsl("%1$s"), qsl("{item}"));
 		} else if (val.contains(qsl("%1$s")) && val.contains(qsl("%2$s"))) {
 			val = val.replace(qsl("%1$s"), qsl("{item1}")).replace(qsl("%2$s"), qsl("{item2}"));
+		}
+
+		if (ranges::find(kMikGramRenamedKeys, key)
+			!= end(kMikGramRenamedKeys)) {
+			val = val.replace(qsl("AyuGram"), qsl("MikGram"));
 		}
 
 		Lang::GetInstance().resetValue(key.toUtf8());

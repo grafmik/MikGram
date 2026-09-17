@@ -129,7 +129,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>@output_name@</string>
+	<string>MikGram</string>
+	<key>CFBundleDisplayName</key>
+	<string>MikGram</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
