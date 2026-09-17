@@ -552,7 +552,15 @@ HistoryItem::HistoryItem(
 		createComponents(data);
 		if (media) {
 			setMedia(*media);
-			if (checked == MediaCheckResult::HasUnsupportedTimeToLive) {
+			const auto hasAyuTtl = media->match([](
+					const MTPDmessageMediaPhoto &media) {
+				return media.vttl_seconds().has_value();
+			}, [](const MTPDmessageMediaDocument &media) {
+				return media.vttl_seconds().has_value() && media.is_video();
+			}, [](const auto &) {
+				return false;
+			});
+			if (hasAyuTtl) {
 				media->match(
 					[&](const MTPDmessageMediaPhoto &media)
 					{
