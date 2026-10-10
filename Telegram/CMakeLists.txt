@@ -1661,6 +1661,8 @@ PRIVATE
     menu/menu_sponsored.h
     menu/menu_ttl_validator.cpp
     menu/menu_ttl_validator.h
+    mikgram/dialog_colors.cpp
+    mikgram/dialog_colors.h
     mtproto/config_loader.cpp
     mtproto/config_loader.h
     mtproto/connection_abstract.cpp
