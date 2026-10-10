@@ -34,6 +34,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_keys.h"
 #include "lottie/lottie_icon.h"
 #include "main/main_session.h"
+#include "mikgram/dialog_colors.h"
 #include "storage/localstorage.h"
 #include "support/support_helper.h"
 #include "ui/empty_userpic.h"
@@ -485,6 +486,14 @@ void PaintRow(
 		p.translate(swipeMirrored ? swipeTranslation : -swipeTranslation, 0);
 	}
 	p.fillRect(geometry, bg);
+	if (history && !fakeRow && !context.active && !context.selected) {
+		const auto index = MikGram::DialogColor(history->peer->id);
+		if (index >= 0) {
+			auto tint = MikGram::DialogColorPalette()[index];
+			tint.setAlpha(56);
+			p.fillRect(geometry, tint);
+		}
+	}
 	if (!(flags & Flag::TopicJumpRipple)) {
 		auto ripple = context.active
 			? st::dialogsRippleBgActive
