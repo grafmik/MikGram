@@ -1929,7 +1929,7 @@ void Filler::fillContextMenuActions() {
 		}
 	}
 	addBanFromChannel();
-	MikGram::AddDialogColorAction(_controller, _peer, _addAction);
+	MikGram::AddDialogColorAction(_peer, _addAction);
 	addClearHistory();
 	addDeleteChat();
 	addLeaveChat();

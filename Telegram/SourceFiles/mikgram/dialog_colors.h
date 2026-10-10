@@ -11,10 +11,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 class PeerData;
 
-namespace Window {
-class SessionController;
-} // namespace Window
-
 namespace MikGram {
 
 [[nodiscard]] const std::vector<QColor> &DialogColorPalette();
@@ -22,7 +18,6 @@ namespace MikGram {
 [[nodiscard]] int DialogColor(PeerId peerId);
 
 void AddDialogColorAction(
-	not_null<Window::SessionController*> controller,
 	PeerData *peer,
 	const Ui::Menu::MenuCallback &addAction);
 
