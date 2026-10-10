@@ -426,7 +426,7 @@ void Manager::buildAppleMenu(QMenu *main) {
 			});
 		};
 		_about = main->addAction(
-			u"About Telegram"_q,
+			u"About MikGram"_q,
 			std::move(callback));
 		_about->setMenuRole(QAction::AboutQtRole);
 	}
@@ -672,7 +672,7 @@ void Manager::buildWindowMenu(QMenu *window) {
 }
 
 void Manager::buildMenu() {
-	buildAppleMenu(_menuBar->addMenu(u"Telegram"_q));
+	buildAppleMenu(_menuBar->addMenu(u"MikGram"_q));
 	_file = _menuBar->addMenu(u"File"_q);
 	buildFileMenu(_file);
 	_edit = _menuBar->addMenu(u"Edit"_q);
