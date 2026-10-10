@@ -22,8 +22,8 @@ namespace Core {
 QString TrayIconToolTip() {
 	const auto counter = Core::App().unreadBadge();
 	return (counter > 0)
-		? u"%1 (%2)"_q.arg(AppName.utf16()).arg(counter)
-		: AppName.utf16();
+		? u"%1 (%2)"_q.arg(u"MikGram"_q).arg(counter)
+		: u"MikGram"_q;
 }
 
 Tray::Tray() {
@@ -87,7 +87,9 @@ void Tray::rebuildMenu() {
 			_activeForTrayIconAction = Core::App().isActiveForTrayMenu();
 			return _activeForTrayIconAction
 				? tr::lng_minimize_to_tray(tr::now)
-				: tr::lng_open_from_tray(tr::now);
+				: tr::lng_open_from_tray(tr::now).replace(
+					u"Telegram"_q,
+					u"MikGram"_q);
 		});
 
 		_tray.addAction(
@@ -108,7 +110,10 @@ void Tray::rebuildMenu() {
 			[=] { toggleSoundNotifications(); });
 	}
 
-	_tray.addAction(tr::lng_quit_from_tray(), [] { Core::Quit(); });
+	auto quitText = tr::lng_quit_from_tray() | rpl::map([](QString text) {
+		return text.replace(u"Telegram"_q, u"MikGram"_q);
+	});
+	_tray.addAction(std::move(quitText), [] { Core::Quit(); });
 
 	TrayAccountsMenu::Fill(_tray);
 
