@@ -11,11 +11,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history.h"
 #include "lang/lang_keys.h"
 #include "settings.h"
-#include "ui/layers/generic_box.h"
 #include "ui/painter.h"
 #include "ui/rp_widget.h"
-#include "window/window_session_controller.h"
-#include "styles/style_layers.h"
+#include "ui/widgets/menu/menu_item_base.h"
+#include "ui/widgets/popup_menu.h"
 #include "styles/style_menu_icons.h"
 #include "styles/style_settings.h"
 
@@ -29,6 +28,7 @@ namespace {
 
 constexpr auto kNoColor = -1;
 constexpr auto kSpacingRatio = 3;
+constexpr auto kPerRow = 5;
 
 [[nodiscard]] QString StoragePath() {
 	return cWorkingDir() + u"tdata/mikgram_dialog_colors.json"_q;
@@ -183,17 +183,73 @@ void Swatches::mousePressEvent(QMouseEvent *e) {
 	}
 }
 
-void ShowDialogColorBox(
-		not_null<Window::SessionController*> controller,
-		not_null<PeerData*> peer) {
-	controller->show(Box([=](not_null<Ui::GenericBox*> box) {
-		box->setTitle(rpl::single(u"Couleur de fond"_q));
-		box->addRow(object_ptr<Swatches>(
-			box,
-			peer,
-			[=] { box->closeBox(); }));
-		box->addButton(tr::lng_close(), [=] { box->closeBox(); });
-	}));
+class SwatchesItem final : public Ui::Menu::ItemBase {
+public:
+	SwatchesItem(
+		not_null<Ui::PopupMenu*> parent,
+		const style::Menu &st,
+		not_null<PeerData*> peer);
+
+	not_null<QAction*> action() const override;
+	bool isEnabled() const override;
+
+protected:
+	int contentHeight() const override;
+
+private:
+	const not_null<QAction*> _dummyAction;
+	int _height = 0;
+
+};
+
+SwatchesItem::SwatchesItem(
+	not_null<Ui::PopupMenu*> parent,
+	const style::Menu &st,
+	not_null<PeerData*> peer)
+: ItemBase(parent->menu(), st)
+, _dummyAction(Ui::CreateChild<QAction>(this)) {
+	const auto padding = st.itemPadding;
+	const auto swatches = Ui::CreateChild<Swatches>(
+		this,
+		peer,
+		[=] { setClicked(); });
+	const auto width = 2 * st::settingsAccentColorLine * 2
+		+ kPerRow * st::settingsAccentColorSize
+		+ (kPerRow - 1) * st::settingsAccentColorSkip * kSpacingRatio;
+	swatches->resizeToWidth(width);
+	swatches->move(padding.left(), padding.top());
+	_height = padding.top() + swatches->height() + padding.bottom();
+	setMinWidth(padding.left() + width + padding.right());
+	fitToMenuWidth();
+}
+
+not_null<QAction*> SwatchesItem::action() const {
+	return _dummyAction;
+}
+
+bool SwatchesItem::isEnabled() const {
+	return true;
+}
+
+int SwatchesItem::contentHeight() const {
+	return _height;
+}
+
+[[nodiscard]] QString DialogColorText() {
+	static const auto map = base::flat_map<QString, QString>{
+		{ u"de"_q, u"Hintergrundfarbe"_q },
+		{ u"es"_q, u"Color de fondo"_q },
+		{ u"fr"_q, u"Couleur de fond"_q },
+		{ u"it"_q, u"Colore di sfondo"_q },
+		{ u"nl"_q, u"Achtergrondkleur"_q },
+		{ u"pl"_q, u"Kolor t\u0142a"_q },
+		{ u"pt"_q, u"Cor de fundo"_q },
+		{ u"ru"_q, u"\u0426\u0432\u0435\u0442 \u0444\u043e\u043d\u0430"_q },
+		{ u"tr"_q, u"Arka plan rengi"_q },
+		{ u"uk"_q, u"\u041a\u043e\u043b\u0456\u0440 \u0442\u043b\u0430"_q },
+	};
+	const auto i = map.find(Lang::Id().section('-', 0, 0));
+	return (i != end(map)) ? i->second : u"Background color"_q;
 }
 
 } // namespace
@@ -219,16 +275,22 @@ int DialogColor(PeerId peerId) {
 }
 
 void AddDialogColorAction(
-		not_null<Window::SessionController*> controller,
 		PeerData *peer,
 		const Ui::Menu::MenuCallback &addAction) {
 	if (!peer) {
 		return;
 	}
-	addAction(
-		u"Couleur de fond"_q,
-		[=] { ShowDialogColorBox(controller, peer); },
-		&st::menuIconPalette);
+	addAction(Ui::Menu::MenuCallback::Args{
+		.text = DialogColorText(),
+		.handler = nullptr,
+		.icon = &st::menuIconPalette,
+		.fillSubmenu = [=](not_null<Ui::PopupMenu*> menu) {
+			menu->addAction(base::make_unique_q<SwatchesItem>(
+				menu,
+				menu->st().menu,
+				peer));
+		},
+	});
 }
 
 } // namespace MikGram
