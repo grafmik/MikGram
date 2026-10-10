@@ -67,6 +67,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 #include "main/main_session_settings.h"
 #include "menu/menu_mute.h"
+#include "mikgram/dialog_colors.h"
 #include "menu/menu_ttl_validator.h"
 #include "apiwrap.h"
 #include "mainwidget.h"
@@ -1928,6 +1929,7 @@ void Filler::fillContextMenuActions() {
 		}
 	}
 	addBanFromChannel();
+	MikGram::AddDialogColorAction(_controller, _peer, _addAction);
 	addClearHistory();
 	addDeleteChat();
 	addLeaveChat();
