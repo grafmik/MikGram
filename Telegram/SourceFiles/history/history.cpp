@@ -69,6 +69,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 #include "mainwidget.h"
 #include "mainwindow.h"
+#include "mikgram/banned_peers.h"
 #include "payments/payments_checkout_process.h"
 #include "spellcheck/spellcheck_types.h"
 #include "storage/localstorage.h"
@@ -3473,7 +3474,7 @@ bool History::trackUnreadMessages() const {
 }
 
 bool History::shouldBeInChatList() const {
-	if (peer->migrateTo() || !folderKnown()) {
+	if (peer->migrateTo() || !folderKnown() || MikGram::IsBanned(peer)) {
 		return false;
 	} else if (const auto community = peer->asChannel()
 		; community && community->isCommunity()) {

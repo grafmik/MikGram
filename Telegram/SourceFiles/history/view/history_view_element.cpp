@@ -57,6 +57,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_keys.h"
 #include "main/main_app_config.h"
 #include "main/main_session.h"
+#include "mikgram/banned_peers.h"
 #include "payments/payments_reaction_process.h" // TryAddingPaidReaction.
 #include "spellcheck/spellcheck_highlight_syntax.h"
 #include "ui/chat/chat_style.h"
@@ -2481,6 +2482,9 @@ ClickHandlerPtr Element::fromLink() const {
 	}
 	const auto item = data();
 	if (const auto from = displayFrom()) {
+		if (MikGram::IsBannedIn(from, history())) {
+			return nullptr;
+		}
 		_fromLink = std::make_shared<LambdaClickHandler>([=](
 				ClickContext context) {
 			if (context.button != Qt::LeftButton) {

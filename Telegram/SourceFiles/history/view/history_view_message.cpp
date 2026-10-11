@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/view/history_view_message.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "api/api_suggest_post.h"
 #include "api/api_transcribes.h"
 #include "base/qt/qt_key_modifiers.h"
@@ -5557,7 +5559,7 @@ void Message::validateFromNameText(PeerData *from) const {
 		_fromNameVersion = version;
 		_fromName.setText(
 			st::msgNameStyle,
-			from->name(),
+			from->name() + MikGram::BannedSuffix(from, history()),
 			Ui::NameTextOptions());
 	}
 	if (from->isPremium()

@@ -490,7 +490,7 @@ QString ForwardedLineForSelectedCopy(not_null<HistoryItem*> item) {
 		return QString();
 	}
 	return TextUtilities::SingleLine(
-		forwarded->phrase(item->Get<HistoryMessageVia>()).text);
+		forwarded->phrase(item->Get<HistoryMessageVia>(), item).text);
 }
 
 HistorySelectedTextParts HistorySelectedItemPlainWrappedText(

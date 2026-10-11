@@ -73,6 +73,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session_settings.h"
 #include "menu/menu_mark_as_read.h"
 #include "menu/menu_sponsored.h"
+#include "mikgram/banned_peers.h"
 #include "settings/settings_common.h"
 #include "storage/storage_account.h"
 #include "ui/chat/chats_filter_tag.h"
@@ -4613,7 +4614,11 @@ void InnerWidget::refreshFilterResults() {
 		: TextUtilities::PrepareSearchWords(_filter);
 	_filterResults.clear();
 	const auto append = [&](not_null<IndexedList*> list) {
-		const auto results = list->filtered(words);
+		auto results = list->filtered(words);
+		MikGram::RemoveBanned(results, [](not_null<Row*> row) {
+			const auto history = row->history();
+			return history ? history->peer->id : PeerId();
+		});
 		auto top = filteredHeight();
 		auto i = _filterResults.insert(
 			end(_filterResults),
@@ -5020,6 +5025,15 @@ void InnerWidget::searchReceived(
 	_searchWaiting = false;
 	_searchLoading = false;
 
+	if (MikGram::HasBanned()) {
+		const auto was = int(messages.size());
+		messages.erase(
+			ranges::remove_if(messages, [](not_null<HistoryItem*> item) {
+				return MikGram::IsBanned(item->history()->peer);
+			}),
+			end(messages));
+		fullCount -= was - int(messages.size());
+	}
 	const auto uniquePeers = uniqueSearchResults();
 	const auto withPreview = _searchWithPostsPreview;
 	const auto toPreview = withPreview && type.posts;
@@ -5088,6 +5102,11 @@ void InnerWidget::peerSearchReceived(Api::PeerSearchResult result) {
 		return;
 	}
 
+	MikGram::RemoveBanned(result.my);
+	MikGram::RemoveBanned(result.peers);
+	MikGram::RemoveBanned(result.sponsored, [](const auto &sponsored) {
+		return sponsored.peer->id;
+	});
 	_peerSearchQuery = result.query.toLower().trimmed();
 	clearPeerSearchResults();
 	_peerSearchResults.reserve(result.peers.size()

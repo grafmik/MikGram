@@ -38,6 +38,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mainwindow.h"
 #include "media/audio/media_audio.h"
 #include "media/audio/media_audio_track.h"
+#include "mikgram/banned_peers.h"
 #include "mtproto/mtproto_config.h"
 #include "platform/platform_notifications_manager.h"
 #include "platform/platform_specific.h"
@@ -324,6 +325,7 @@ System::SkipState System::skipNotification(
 	const auto thread = item->maybeNotificationThread();
 	if (!thread
 		|| !thread->currentNotification()
+		|| MikGram::IsBanned(item->history()->peer)
 		|| (messageType && item->skipNotification())
 		|| (type == Data::ItemNotificationType::Reaction
 			&& skipSentNotification(item, _sentReactionNotifications))
