@@ -208,6 +208,7 @@ struct HistoryMessageForwarded
 		not_null<const HistoryItem*> item) const;
 	[[nodiscard]] TextWithEntities phrase(
 		const HistoryMessageVia *via,
+		not_null<const HistoryItem*> item,
 		TextWithEntities userpic = {}) const;
 
 	[[nodiscard]] bool forwardOfForward() const {

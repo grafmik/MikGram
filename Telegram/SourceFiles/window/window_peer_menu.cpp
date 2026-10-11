@@ -67,6 +67,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 #include "main/main_session_settings.h"
 #include "menu/menu_mute.h"
+#include "mikgram/banned_peers.h"
 #include "mikgram/dialog_colors.h"
 #include "menu/menu_ttl_validator.h"
 #include "apiwrap.h"
@@ -1930,6 +1931,7 @@ void Filler::fillContextMenuActions() {
 	}
 	addBanFromChannel();
 	MikGram::AddDialogColorAction(_peer, _addAction);
+	MikGram::AddBanAction(_controller, _topic ? nullptr : _peer, _addAction);
 	addClearHistory();
 	addDeleteChat();
 	addLeaveChat();
@@ -1983,6 +1985,7 @@ void Filler::fillProfileActions() {
 	addToggleFolder();
 	addBlockUser();
 	addBanFromChannel();
+	MikGram::AddBanAction(_controller, _topic ? nullptr : _peer, _addAction);
 	addReport();
 	addLeaveChat();
 	addDeleteContact();
