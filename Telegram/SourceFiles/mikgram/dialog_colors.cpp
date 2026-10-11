@@ -9,7 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_peer.h"
 #include "data/data_session.h"
 #include "history/history.h"
-#include "lang/lang_keys.h"
+#include "mikgram/lang.h"
 #include "settings.h"
 #include "ui/painter.h"
 #include "ui/rp_widget.h"
@@ -235,23 +235,6 @@ int SwatchesItem::contentHeight() const {
 	return _height;
 }
 
-[[nodiscard]] QString DialogColorText() {
-	static const auto map = base::flat_map<QString, QString>{
-		{ u"de"_q, u"Hintergrundfarbe"_q },
-		{ u"es"_q, u"Color de fondo"_q },
-		{ u"fr"_q, u"Couleur de fond"_q },
-		{ u"it"_q, u"Colore di sfondo"_q },
-		{ u"nl"_q, u"Achtergrondkleur"_q },
-		{ u"pl"_q, u"Kolor t\u0142a"_q },
-		{ u"pt"_q, u"Cor de fundo"_q },
-		{ u"ru"_q, u"\u0426\u0432\u0435\u0442 \u0444\u043e\u043d\u0430"_q },
-		{ u"tr"_q, u"Arka plan rengi"_q },
-		{ u"uk"_q, u"\u041a\u043e\u043b\u0456\u0440 \u0442\u043b\u0430"_q },
-	};
-	const auto i = map.find(Lang::Id().section('-', 0, 0));
-	return (i != end(map)) ? i->second : u"Background color"_q;
-}
-
 } // namespace
 
 const std::vector<QColor> &DialogColorPalette() {
@@ -281,7 +264,7 @@ void AddDialogColorAction(
 		return;
 	}
 	addAction(Ui::Menu::MenuCallback::Args{
-		.text = DialogColorText(),
+		.text = Text(Phrase::DialogColor),
 		.handler = nullptr,
 		.icon = &st::menuIconPalette,
 		.fillSubmenu = [=](not_null<Ui::PopupMenu*> menu) {

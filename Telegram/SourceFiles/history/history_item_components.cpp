@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history_item_components.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "api/api_text_entities.h"
 #include "base/qt/qt_key_modifiers.h"
 #include "base/algorithm.h"
@@ -299,11 +301,13 @@ bool HiddenSenderInfo::paintCustomUserpic(
 
 TextWithEntities HistoryMessageForwarded::phrase(
 		const HistoryMessageVia *via,
+		not_null<const HistoryItem*> item,
 		TextWithEntities userpic) const {
 	const auto fromChannel = IsForwardedFromChannel(originalSender);
 	const auto name = TextWithEntities{
 		.text = (originalSender
-			? originalSender->name()
+			? (originalSender->name()
+				+ MikGram::BannedSuffix(originalSender, item->history()))
 			: originalHiddenSenderInfo->name)
 	};
 	auto result = std::move(userpic);
@@ -406,13 +410,15 @@ void HistoryMessageForwarded::create(
 	}
 	text.setMarkedText(
 		st::fwdTextStyle,
-		phrase(via, std::move(userpic)),
+		phrase(via, item, std::move(userpic)),
 		kMarkupTextOptions,
 		context);
 
 	text.setLink(
 		1,
-		IsForwardedFromChannel(originalSender)
+		MikGram::IsBannedIn(originalSender, item->history())
+			? ClickHandlerPtr()
+			: IsForwardedFromChannel(originalSender)
 			? JumpToMessageClickHandler(originalSender, originalId)
 			: originalSender
 			? originalSender->openLink()

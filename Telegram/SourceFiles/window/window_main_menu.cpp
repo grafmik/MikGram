@@ -7,6 +7,9 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/window_main_menu.h"
 
+#include "mikgram/banned_peers.h"
+#include "mikgram/lang.h"
+
 #include "apiwrap.h"
 #include "base/event_filter.h"
 #include "base/qt_signal_producer.h"
@@ -708,6 +711,12 @@ void MainMenu::setupMenu() {
 			{ &st::menuIconUserShow }
 		)->setClickedCallback([=] {
 			controller->show(PrepareContactsBox(controller));
+		});
+		addAction(
+			rpl::single(MikGram::Text(MikGram::Phrase::BannedChats)),
+			{ &st::menuIconBlock }
+		)->setClickedCallback([=] {
+			MikGram::ShowBannedBox(controller);
 		});
 		addAction(
 			tr::lng_menu_calls(),
