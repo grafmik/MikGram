@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/notifications_manager.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "base/options.h"
 #include "base/platform/base_platform_info.h"
 #include "base/qt/qt_key_modifiers.h"
@@ -317,6 +319,7 @@ System::SkipState System::skipNotification(
 	const auto thread = item->maybeNotificationThread();
 	if (!thread
 		|| !thread->currentNotification()
+		|| MikGram::IsBanned(item->history()->peer)
 		|| (messageType && item->skipNotification())
 		|| (type == Data::ItemNotificationType::Reaction
 			&& skipSentNotification(item, _sentReactionNotifications))

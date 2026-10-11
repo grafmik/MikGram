@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/view/history_view_element.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "apiwrap.h"
 #include "api/api_transcribes.h"
 #include "history/view/history_view_service_message.h"
@@ -2461,6 +2463,9 @@ ClickHandlerPtr Element::fromLink() const {
 	}
 	const auto item = data();
 	if (const auto from = displayFrom()) {
+		if (MikGram::IsBannedIn(from, history())) {
+			return nullptr;
+		}
 		_fromLink = std::make_shared<LambdaClickHandler>([=](
 				ClickContext context) {
 			if (context.button != Qt::LeftButton) {

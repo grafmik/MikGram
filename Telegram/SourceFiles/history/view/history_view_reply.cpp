@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/view/history_view_reply.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "core/click_handler_types.h"
 #include "core/ui_integration.h"
 #include "data/stickers/data_custom_emoji.h"
@@ -475,6 +477,9 @@ void Reply::update(
 
 	if (_displaying) {
 		setLinkFrom(view, data);
+		if (MikGram::ReplyLeadsToBanned(item)) {
+			_link = nullptr;
+		}
 		const auto media = message ? message->media() : nullptr;
 		if (!media
 			|| !media->hasReplyPreview()
@@ -677,9 +682,12 @@ void Reply::updateName(
 		nameFull.append(PeerEmoji(sender));
 	}
 	nameFull.append(name);
+	nameFull.append(
+		MikGram::BannedSuffix(sender ? sender : externalPeer, history));
 	if (groupNameAdded) {
 		nameFull.append(' ').append(PeerEmoji(externalPeer));
 		nameFull.append(externalPeer->name());
+		nameFull.append(MikGram::BannedSuffix(externalPeer, history));
 	} else if (originalNameAdded) {
 		nameFull.append(' ').append(
 			st::historyReplyForward

@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history_item_components.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "api/api_text_entities.h"
 #include "base/qt/qt_key_modifiers.h"
 #include "base/algorithm.h"
@@ -294,7 +296,8 @@ void HistoryMessageForwarded::create(
 		&& !originalSender->isMegagroup();
 	const auto name = TextWithEntities{
 		.text = (originalSender
-			? originalSender->name()
+			? (originalSender->name()
+				+ MikGram::BannedSuffix(originalSender, item->history()))
 			: originalHiddenSenderInfo->name)
 	};
 	if (const auto copy = originalSender) {
@@ -386,7 +389,9 @@ void HistoryMessageForwarded::create(
 	}
 	text.setMarkedText(st::fwdTextStyle, phrase, kMarkupTextOptions, context);
 
-	text.setLink(1, fromChannel
+	text.setLink(1, MikGram::IsBannedIn(originalSender, item->history())
+		? ClickHandlerPtr()
+		: fromChannel
 		? JumpToMessageClickHandler(originalSender, originalId)
 		: originalSender
 		? originalSender->openLink()

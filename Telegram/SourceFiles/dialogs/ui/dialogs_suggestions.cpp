@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "dialogs/ui/dialogs_suggestions.h"
 
+#include "mikgram/banned_peers.h"
+
 #include "api/api_chat_participants.h"
 #include "apiwrap.h"
 #include "base/unixtime.h"
@@ -1142,7 +1144,8 @@ void RecommendationsController::fill() {
 		return;
 	}
 	for (const auto &peer : list) {
-		if (const auto channel = peer->asBroadcast()) {
+		const auto channel = peer->asBroadcast();
+		if (channel && !MikGram::IsBanned(channel)) {
 			appendRow(channel);
 		}
 	}
@@ -2926,7 +2929,9 @@ rpl::producer<TopPeersList> TopPeersContent(
 }
 
 RecentPeersList RecentPeersContent(not_null<Main::Session*> session) {
-	return RecentPeersList{ session->recentPeers().list() };
+	auto result = RecentPeersList{ session->recentPeers().list() };
+	MikGram::RemoveBanned(result.list);
+	return result;
 }
 
 object_ptr<Ui::BoxContent> StarsExamplesBox(
