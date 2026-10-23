@@ -24,6 +24,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_keys.h"
 #include "lottie/lottie_icon.h"
 #include "main/main_session.h"
+#include "mikgram/discussion_author.h"
 #include "ui/chat/chat_style.h"
 #include "ui/chat/message_bubble.h"
 #include "ui/effects/reaction_fly_animation.h"
@@ -692,7 +693,8 @@ BottomInfo::Data BottomInfoDataFromMessage(not_null<Message*> message) {
 		|| !item->hasRealFromId()
 		|| !item->history()->peer->asChannel()->signatureProfiles()) {
 		if (const auto msgsigned = item->Get<HistoryMessageSigned>()) {
-			if (!msgsigned->isAnonymousRank) {
+			if (!msgsigned->isAnonymousRank
+				&& !MikGram::ShowsDiscussionAuthor(item)) {
 				result.author = msgsigned->author;
 			}
 		}
