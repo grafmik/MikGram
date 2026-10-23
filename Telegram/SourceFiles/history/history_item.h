@@ -629,6 +629,9 @@ public:
 	[[nodiscard]] bool isDiscussionPost() const;
 	[[nodiscard]] HistoryItem *lookupDiscussionPostOriginal() const;
 	[[nodiscard]] PeerData *displayFrom() const;
+	void invalidateDisplayFrom() const {
+		_flags &= ~MessageFlag::DisplayFromChecked;
+	}
 
 	[[nodiscard]] uint8 colorIndex() const;
 	[[nodiscard]] DocumentId backgroundEmojiId() const;

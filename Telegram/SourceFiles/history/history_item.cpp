@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history_item.h"
 
+#include "mikgram/discussion_author.h"
+
 #include "api/api_premium.h"
 #include "api/api_sensitive_content.h"
 #include "api/api_transcribes.h"
@@ -1581,7 +1583,9 @@ HistoryItem *HistoryItem::lookupDiscussionPostOriginal() const {
 }
 
 PeerData *HistoryItem::computeDisplayFrom() const {
-	if (const auto sender = discussionPostOriginalSender()) {
+	if (const auto author = MikGram::DiscussionAuthor(this)) {
+		return author;
+	} else if (const auto sender = discussionPostOriginalSender()) {
 		return sender;
 	} else if (const auto forwarded = Get<HistoryMessageForwarded>()) {
 		if (showForwardsFromSender(forwarded)) {

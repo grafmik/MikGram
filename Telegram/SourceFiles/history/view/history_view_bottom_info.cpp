@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/view/history_view_bottom_info.h"
 
+#include "mikgram/discussion_author.h"
+
 #include "ui/chat/message_bubble.h"
 #include "ui/chat/chat_style.h"
 #include "ui/effects/reaction_fly_animation.h"
@@ -686,7 +688,8 @@ BottomInfo::Data BottomInfoDataFromMessage(not_null<Message*> message) {
 		|| !item->hasRealFromId()
 		|| !item->history()->peer->asChannel()->signatureProfiles()) {
 		if (const auto msgsigned = item->Get<HistoryMessageSigned>()) {
-			if (!msgsigned->isAnonymousRank) {
+			if (!msgsigned->isAnonymousRank
+				&& !MikGram::ShowsDiscussionAuthor(item)) {
 				result.author = msgsigned->author;
 			}
 		}

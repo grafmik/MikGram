@@ -1692,6 +1692,8 @@ PRIVATE
     mikgram/banned_peers.h
     mikgram/dialog_colors.cpp
     mikgram/dialog_colors.h
+    mikgram/discussion_author.cpp
+    mikgram/discussion_author.h
     mikgram/lang.cpp
     mikgram/lang.h
     mtproto/config_loader.cpp
