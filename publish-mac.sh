@@ -9,7 +9,7 @@ set -euo pipefail
 
 REPO=grafmik/MikGram
 ASSET=MikGram-mac.zip
-BUILD_REPO=~/app/ayugram-build/ayugram
+BUILD_REPO=$(cd "$(dirname "$0")" && pwd)
 APP=${1:-$BUILD_REPO/out/Release/Telegram.app}
 
 [ -d "$APP" ] || { echo "App introuvable : $APP" >&2; exit 1; }
