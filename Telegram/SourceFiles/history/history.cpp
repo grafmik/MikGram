@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history.h"
 
+#include "mikgram/auto_read.h"
 #include "mikgram/banned_peers.h"
 
 #include "history/view/history_view_element.h"
@@ -1754,6 +1755,7 @@ void History::newItemAdded(not_null<HistoryItem*> item, NewAddType type) {
 			session().credits().tonLoad(true);
 		}
 	}
+	MikGram::AutoReadAfterAdded(item);
 }
 
 void History::applyStreamedDraftFinish(not_null<HistoryItem*> item) {
@@ -3529,6 +3531,7 @@ void History::applyDialog(
 	applyDialogTopMessage(data.vtop_message().v);
 	setUnreadMark(data.is_unread_mark());
 	unreadMentions().setCount(data.vunread_mentions_count().v);
+	MikGram::AutoReadAfterDialog(this);
 	unreadReactions().setCount(data.vunread_reactions_count().v);
 	const auto pollVotesCount = data.vunread_poll_votes_count().v;
 	setUnreadPollVotesCount(pollVotesCount);

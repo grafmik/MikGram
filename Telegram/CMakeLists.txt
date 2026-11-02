@@ -1711,6 +1711,8 @@ PRIVATE
     menu/menu_sponsored.h
     menu/menu_ttl_validator.cpp
     menu/menu_ttl_validator.h
+    mikgram/auto_read.cpp
+    mikgram/auto_read.h
     mikgram/banned_peers.cpp
     mikgram/banned_peers.h
     mikgram/dialog_colors.cpp
