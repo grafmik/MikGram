@@ -13,11 +13,15 @@ class PeerData;
 namespace MikGram {
 
 // Moderation bots (@MissRose_bot) whose messages are read automatically,
-// as long as nobody else wrote something unread before them.
+// as long as nobody else wrote something unread before them (service
+// messages like "joined the group" don't count as written by somebody).
 [[nodiscard]] bool IsAutoReadSender(const PeerData *peer);
 
 // After a new incoming message was added to its chat.
 void AutoReadAfterAdded(not_null<HistoryItem*> item);
+
+// After an unread incoming message was deleted from its chat.
+void AutoReadAfterRemoved(not_null<HistoryItem*> item);
 
 // After the chat's unread state came from the server (chats list).
 void AutoReadAfterDialog(not_null<History*> history);
