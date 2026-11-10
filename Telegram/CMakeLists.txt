@@ -1721,6 +1721,7 @@ PRIVATE
     mikgram/discussion_author.h
     mikgram/lang.cpp
     mikgram/lang.h
+    mikgram/no_ads.h
     mtproto/config_loader.cpp
     mtproto/config_loader.h
     mtproto/connection_abstract.cpp
