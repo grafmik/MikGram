@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "api/api_peer_search.h"
 
+#include "mikgram/no_ads.h"
+
 #include "api/api_single_message_search.h"
 #include "apiwrap.h"
 #include "data/data_session.h"
@@ -54,7 +56,8 @@ void PeerSearch::request(
 	}
 	cache.requested = true;
 	cache.result.query = _query;
-	if (_type != Type::WithSponsored
+	if (MikGram::kNoAds
+		|| _type != Type::WithSponsored
 		|| _query.size() < kMinSponsoredQueryLength) {
 		cache.sponsoredReady = true;
 	} else {
