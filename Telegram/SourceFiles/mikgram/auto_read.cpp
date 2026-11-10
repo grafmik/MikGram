@@ -30,8 +30,9 @@ struct Found {
 };
 
 // Unread messages of the chat (rootId == 0) or of one topic, if they all
-// come from an auto-read bot. Empty when someone else wrote one of them,
-// or when they are not loaded and there is more than one.
+// come from an auto-read bot or are service ones ("joined the group", that
+// the bot answers). Empty when someone else wrote one of them, or when they
+// are not loaded and there is more than one.
 [[nodiscard]] Found FindAutoReadable(
 		not_null<History*> history,
 		MsgId rootId,
@@ -42,27 +43,33 @@ struct Found {
 		return {};
 	}
 	auto result = Found();
-	for (const auto &block : ranges::views::reverse(history->blocks)) {
-		for (const auto &view : ranges::views::reverse(block->messages)) {
-			const auto item = view->data();
-			if (!item->isRegular()
-				|| item->out()
-				|| (rootId && item->topicRootId() != rootId)) {
-				continue;
-			} else if (item->id <= readTill) {
-				return (int(result.items.size()) == unread)
-					? result
-					: Found();
-			} else if (!IsAutoReadSender(item->from())) {
-				return {};
+	auto seen = 0;
+	const auto collect = [&] {
+		for (const auto &block : ranges::views::reverse(history->blocks)) {
+			for (const auto &view : ranges::views::reverse(block->messages)) {
+				const auto item = view->data();
+				if (!item->isRegular()
+					|| item->out()
+					|| (rootId && item->topicRootId() != rootId)) {
+					continue;
+				} else if (item->id <= readTill) {
+					return true;
+				} else if (IsAutoReadSender(item->from())) {
+					if (!result.till) {
+						result.till = item->id;
+					}
+					result.items.push_back(item);
+				} else if (!item->isService()) {
+					return false;
+				}
+				++seen;
 			}
-			if (!result.till) {
-				result.till = item->id;
-			}
-			result.items.push_back(item);
 		}
-	}
-	if (int(result.items.size()) == unread) {
+		return true;
+	};
+	if (!collect()) {
+		return {};
+	} else if (result.till && seen == unread) {
 		return result;
 	} else if (unread == 1
 		&& last
@@ -152,6 +159,28 @@ void AutoReadAfterAdded(not_null<HistoryItem*> item) {
 			CheckTopic(topic);
 		} else {
 			CheckHistory(item->history());
+		}
+	});
+}
+
+void AutoReadAfterRemoved(not_null<HistoryItem*> item) {
+	if (!item->isRegular() || item->savedSublist()) {
+		return;
+	}
+	// The bot deletes the "joined the group" message or the spam it
+	// answered: its own message may be the only unread one now.
+	const auto history = item->history();
+	const auto session = &history->session();
+	const auto peerId = history->peer->id;
+	const auto rootId = history->isForum() ? item->topicRootId() : MsgId();
+	crl::on_main(session, [=] {
+		const auto history = session->data().historyLoaded(peerId);
+		if (!history) {
+			return;
+		} else if (!rootId) {
+			CheckHistory(history);
+		} else if (const auto topic = history->peer->forumTopicFor(rootId)) {
+			CheckTopic(topic);
 		}
 	});
 }

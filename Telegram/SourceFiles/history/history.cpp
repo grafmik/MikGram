@@ -279,6 +279,7 @@ void History::itemVanished(not_null<HistoryItem*> item) {
 		&& item->unread(this)
 		&& unreadCount() > 0) {
 		setUnreadCount(unreadCount() - 1);
+		MikGram::AutoReadAfterRemoved(item);
 	}
 	if (const auto media = item->media()) {
 		if (media->gift()) {
