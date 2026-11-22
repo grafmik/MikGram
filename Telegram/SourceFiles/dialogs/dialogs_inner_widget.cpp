@@ -74,6 +74,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "menu/menu_mark_as_read.h"
 #include "menu/menu_sponsored.h"
 #include "mikgram/banned_peers.h"
+#include "mikgram/local_pins.h"
 #include "settings/settings_common.h"
 #include "storage/storage_account.h"
 #include "ui/chat/chats_filter_tag.h"
@@ -157,7 +158,7 @@ constexpr auto kPreviewPostsLimit = 3;
 	for (const auto &row : *list) {
 		if (row->entry()->fixedOnTopIndex()) {
 			continue;
-		} else if (!row->entry()->isPinnedDialog(filterId)) {
+		} else if (!MikGram::IsPinnedShown(row->entry(), filterId)) {
 			break;
 		}
 		++result;
@@ -2181,7 +2182,9 @@ void InnerWidget::mouseMoveEvent(QMouseEvent *e) {
 		const auto local = e->pos();
 		const auto outside = _dragging ? false : true;
 		const auto delta = local - _dragStart;
-		const auto thresholdY = _pressed->entry()->isPinnedDialog(_filterId)
+		const auto thresholdY = MikGram::IsPinnedShown(
+				_pressed->entry(),
+				_filterId)
 			? kStartDragToFilterThresholdY
 			: kStartDragToFilterThresholdX;
 		const auto distanceExceeded = std::abs(delta.x())
@@ -2719,7 +2722,8 @@ void InnerWidget::mousePressEvent(QMouseEvent *e) {
 	if (anim::Disabled()
 		&& !activeMiddleQuickAction()
 		&& !_chatPreviewScheduled
-		&& (!_pressed || !_pressed->entry()->isPinnedDialog(_filterId))) {
+		&& (!_pressed
+			|| !MikGram::IsPinnedShown(_pressed->entry(), _filterId))) {
 		mousePressReleased(e->globalPos(), e->button(), e->modifiers());
 	}
 }
@@ -2887,14 +2891,14 @@ void InnerWidget::startReorderPinned(QPoint localPosition) {
 }
 
 int InnerWidget::countPinnedIndex(Row *ofRow) {
-	if (!ofRow || !ofRow->entry()->isPinnedDialog(_filterId)) {
+	if (!ofRow || !MikGram::IsPinnedShown(ofRow->entry(), _filterId)) {
 		return -1;
 	}
 	auto result = 0;
 	for (const auto &row : *_shownList) {
 		if (row->entry()->fixedOnTopIndex()) {
 			continue;
-		} else if (!row->entry()->isPinnedDialog(_filterId)) {
+		} else if (!MikGram::IsPinnedShown(row->entry(), _filterId)) {
 			break;
 		} else if (row == ofRow) {
 			return result;
@@ -2924,6 +2928,7 @@ void InnerWidget::savePinnedOrder() {
 	} else if (_filterId) {
 		Api::SaveNewFilterPinned(&session(), _filterId);
 	} else {
+		MikGram::SyncServerPinnedOrder(&session(), _openedFolder);
 		session().api().savePinnedOrder(_openedFolder);
 	}
 }
@@ -3067,11 +3072,8 @@ bool InnerWidget::updateReorderPinned(QPoint localPosition) {
 	const auto delta = [&] {
 		if (localPosition.y() < _visibleTop) {
 			return localPosition.y() - _visibleTop;
-		} else if ((localPosition.y() > _visibleBottom)
-			&& (_savedSublists
-				|| _openedFolder
-				|| _openedForum
-				|| _filterId)) {
+		} else if (localPosition.y() > _visibleBottom) {
+			// MikGram: the main list too, its pinned chats can be many.
 			return localPosition.y() - _visibleBottom;
 		}
 		return 0;

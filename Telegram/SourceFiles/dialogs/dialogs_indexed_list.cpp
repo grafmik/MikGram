@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "history/history.h"
 #include "main/main_session.h"
+#include "mikgram/local_pins.h"
 
 namespace Dialogs {
 
@@ -80,6 +81,12 @@ void IndexedList::movePinned(Row *row, int deltaSign) {
 	} else {
 		Assert(swapPinnedIndexWith != cbegin());
 		--swapPinnedIndexWith;
+	}
+	if (MikGram::MovePinned( // MikGram: chats pinned locally
+			_filterId,
+			row->key(),
+			(*swapPinnedIndexWith)->key())) {
+		return;
 	}
 	row->key().entry()->owner().reorderTwoPinnedChats(
 		_filterId,

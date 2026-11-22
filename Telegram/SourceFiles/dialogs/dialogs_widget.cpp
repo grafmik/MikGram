@@ -67,6 +67,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mainwidget.h"
 #include "mainwindow.h"
 #include "media/stories/media_stories_post.h"
+#include "mikgram/local_pins.h"
 #include "storage/storage_account.h"
 #include "storage/storage_domain.h"
 #include "storage/storage_media_prepare.h"
@@ -321,7 +322,8 @@ Widget::Widget(
 				&& !update.history->isPinnedDialog(FilterId());
 		} else {
 			return !update.history->folder()
-				&& !update.history->isPinnedDialog(
+				&& !MikGram::IsPinnedShown(
+					update.history,
 					controller->activeChatsFilterCurrent());
 		}
 	}) | rpl::on_next([=](const Data::HistoryUpdate &update) {

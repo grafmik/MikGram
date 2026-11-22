@@ -249,9 +249,9 @@ int Entry::lookupPinnedIndex(FilterId filterId) const {
 
 uint64 Entry::computeSortPosition(FilterId filterId) const {
 	const auto index = lookupPinnedIndex(filterId);
-	return index
+	return MikGram::ChatListSortKey(this, filterId, index // MikGram
 		? PinnedDialogPos(index)
-		: MikGram::LocalPinSortKey(this, filterId, _sortKeyByDate);
+		: _sortKeyByDate);
 }
 
 bool Entry::hasUnreadUnmutedForSort() const {
