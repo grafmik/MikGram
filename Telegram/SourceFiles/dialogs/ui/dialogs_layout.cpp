@@ -35,6 +35,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lottie/lottie_icon.h"
 #include "main/main_session.h"
 #include "mikgram/dialog_colors.h"
+#include "mikgram/local_pins.h"
 #include "storage/localstorage.h"
 #include "support/support_helper.h"
 #include "ui/text/format_values.h"
@@ -652,7 +653,7 @@ void PaintRow(
 		// Unlike the Archive folder (fixed on top), a collapsed community is
 		// a movable pinned entry, so it shows the pinned icon when pinned and
 		// without an unread counter, exactly like an ordinary chat.
-		const auto displayPinnedIcon = entry->isPinnedDialog(context.filter)
+		const auto displayPinnedIcon = MikGram::IsPinnedShown(entry, context.filter)
 			&& (context.filter || !entry->fixedOnTopIndex());
 		const auto availableWidth = PaintWideCounter(
 			p,
@@ -700,7 +701,7 @@ void PaintRow(
 		auto availableWidth = namewidth;
 		if (const auto used = PaintRightButton(p, context)) {
 			availableWidth -= used;
-		} else if (entry->isPinnedDialog(context.filter)
+		} else if (MikGram::IsPinnedShown(entry, context.filter)
 			&& (context.filter || !entry->fixedOnTopIndex())) {
 			auto &icon = ThreeStateIcon(
 				st::dialogsPinnedIcon,
@@ -802,7 +803,7 @@ void PaintRow(
 		auto availableWidth = namewidth;
 		if (const auto used = PaintRightButton(p, context)) {
 			availableWidth -= used;
-		} else if (entry->isPinnedDialog(context.filter)
+		} else if (MikGram::IsPinnedShown(entry, context.filter)
 			&& (context.filter || !entry->fixedOnTopIndex())) {
 			auto &icon = ThreeStateIcon(
 				st::dialogsPinnedIcon,
@@ -846,7 +847,7 @@ void PaintRow(
 		if (hintDateShown) {
 			PaintDialogDate(p, entry, fakeRow, date, rectForName, context);
 		}
-		if (entry->isPinnedDialog(context.filter)
+		if (MikGram::IsPinnedShown(entry, context.filter)
 			&& (context.filter || !entry->fixedOnTopIndex())) {
 			auto &icon = ThreeStateIcon(
 				st::dialogsPinnedIcon,
@@ -1211,7 +1212,7 @@ void RowPainter::Paint(
 		return std::max({ itemDate, draftDate, hintDate });
 	}();
 	const auto displayPinnedIcon = badgesState.empty()
-		&& entry->isPinnedDialog(context.filter)
+		&& MikGram::IsPinnedShown(entry, context.filter)
 		&& (context.filter || !entry->fixedOnTopIndex());
 
 	const auto from = history

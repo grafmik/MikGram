@@ -1801,6 +1801,8 @@ PRIVATE
     mikgram/discussion_author.h
     mikgram/lang.cpp
     mikgram/lang.h
+    mikgram/local_pins.cpp
+    mikgram/local_pins.h
     mikgram/no_ads.h
     mtproto/config_loader.cpp
     mtproto/config_loader.h

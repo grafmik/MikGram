@@ -103,6 +103,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "menu/menu_ttl_validator.h"
 #include "mikgram/banned_peers.h"
 #include "mikgram/dialog_colors.h"
+#include "mikgram/local_pins.h"
 #include "mtproto/mtproto_config.h"
 #include "settings/sections/settings_advanced.h"
 #include "settings/sections/settings_premium.h"
@@ -419,6 +420,8 @@ bool PinnedLimitReached(
 		history->session().api().savePinnedOrder(folder);
 	} else if (folder) {
 		controller->show(Box(FolderPinsLimitBox, &history->session()));
+	} else if (MikGram::PinLocally(history)) { // MikGram: no pins limit
+		controller->content()->dialogsToUp();
 	} else {
 		controller->show(Box(PinsLimitBox, &history->session()));
 	}
@@ -442,7 +445,7 @@ void TogglePinnedThread(
 		not_null<Window::SessionController*> controller,
 		not_null<Dialogs::Entry*> entry,
 		Fn<void()> onToggled) {
-	if (!entry->folderKnown()) {
+	if (!entry->folderKnown() || MikGram::UnpinLocally(entry)) {
 		return;
 	}
 	const auto owner = &entry->owner();
@@ -574,7 +577,7 @@ void Filler::addTogglePin() {
 		return;
 	}
 	const auto pinText = [=] {
-		return entry->isPinnedDialog(filterId)
+		return MikGram::IsPinnedShown(entry, filterId)
 			? tr::lng_context_unpin_from_top(tr::now)
 			: tr::lng_context_pin_to_top(tr::now);
 	};
@@ -587,7 +590,7 @@ void Filler::addTogglePin() {
 	_addAction(
 		pinText(),
 		pinToggle,
-		(entry->isPinnedDialog(filterId)
+		(MikGram::IsPinnedShown(entry, filterId)
 			? &st::menuIconUnpin
 			: &st::menuIconPin));
 }

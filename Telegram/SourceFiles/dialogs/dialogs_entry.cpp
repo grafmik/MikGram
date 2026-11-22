@@ -24,6 +24,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 #include "main/main_session_settings.h"
 #include "mainwidget.h"
+#include "mikgram/local_pins.h"
 #include "ui/text/format_values.h"
 #include "ui/text/text_options.h"
 #include "ui/ui_utility.h"
@@ -248,7 +249,9 @@ int Entry::lookupPinnedIndex(FilterId filterId) const {
 
 uint64 Entry::computeSortPosition(FilterId filterId) const {
 	const auto index = lookupPinnedIndex(filterId);
-	return index ? PinnedDialogPos(index) : _sortKeyByDate;
+	return index
+		? PinnedDialogPos(index)
+		: MikGram::LocalPinSortKey(this, filterId, _sortKeyByDate);
 }
 
 bool Entry::hasUnreadUnmutedForSort() const {

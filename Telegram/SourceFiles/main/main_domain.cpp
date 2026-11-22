@@ -612,6 +612,9 @@ void Domain::scheduleWriteAccounts() {
 }
 
 int Domain::maxAccounts() const {
+	if (true) {
+		return kPremiumMaxAccounts; // MikGram: no Premium needed
+	}
 	const auto premiumCount = ranges::count_if(accounts(), [](
 			const Main::Domain::AccountWithIndex &d) {
 		return d.account->sessionExists()
