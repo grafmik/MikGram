@@ -384,7 +384,7 @@ NSRect PeerRectByIndex(int index) {
 					order.at(i).history(),
 					order.at(i + d).history());
 			}
-			_session->api().savePinnedOrder(nullptr);
+			// MikGram: the main list pins are never sent to Telegram.
 		});
 
 		moveToShift(result, 0);

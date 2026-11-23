@@ -2927,8 +2927,7 @@ void InnerWidget::savePinnedOrder() {
 		session().api().savePinnedOrder(_openedForum);
 	} else if (_filterId) {
 		Api::SaveNewFilterPinned(&session(), _filterId);
-	} else {
-		MikGram::SyncServerPinnedOrder(&session(), _openedFolder);
+	} else if (_openedFolder) { // MikGram: the main list stays here
 		session().api().savePinnedOrder(_openedFolder);
 	}
 }

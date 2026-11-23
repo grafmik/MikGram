@@ -420,8 +420,6 @@ bool PinnedLimitReached(
 		history->session().api().savePinnedOrder(folder);
 	} else if (folder) {
 		controller->show(Box(FolderPinsLimitBox, &history->session()));
-	} else if (MikGram::PinLocally(history)) { // MikGram: no pins limit
-		controller->content()->dialogsToUp();
 	} else {
 		controller->show(Box(PinsLimitBox, &history->session()));
 	}
@@ -445,7 +443,16 @@ void TogglePinnedThread(
 		not_null<Window::SessionController*> controller,
 		not_null<Dialogs::Entry*> entry,
 		Fn<void()> onToggled) {
-	if (!entry->folderKnown() || MikGram::UnpinLocally(entry)) {
+	if (!entry->folderKnown()) {
+		return;
+	} else if (const auto pinned = MikGram::TogglePinLocally(entry)) {
+		// MikGram: the main list pins stay on this computer.
+		if (*pinned) {
+			controller->content()->dialogsToUp();
+		}
+		if (onToggled) {
+			onToggled();
+		}
 		return;
 	}
 	const auto owner = &entry->owner();

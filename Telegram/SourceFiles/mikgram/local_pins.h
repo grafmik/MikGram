@@ -8,16 +8,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "data/data_types.h"
 
-class History;
-
-namespace Main {
-class Session;
-} // namespace Main
-
-namespace Data {
-class Folder;
-} // namespace Data
-
 namespace Dialogs {
 class Entry;
 class Key;
@@ -25,37 +15,29 @@ class Key;
 
 namespace MikGram {
 
-// Pinned chats of the main chats list, beyond Telegram's limit (5 chats,
-// 10 with Premium, checked by the server) and in any order. Both are kept
-// on this computer only: the chats pinned beyond the limit, and the order
-// of every pinned chat once one is pinned that way. The order of the chats
-// pinned on Telegram is still sent to Telegram after a reorder.
+// Pinned chats of the main chats list kept on this computer: no limit, any
+// order, and nothing is sent to Telegram, neither the pinned chats nor their
+// order. Until the first pin, unpin or move, the chats pinned on Telegram are
+// shown; they become the starting list of this computer. The archive and the
+// custom folders keep Telegram's pins.
 
-// Pinned on Telegram or locally: what the chats list and menus show.
+// What the chats list and menus show as pinned.
 [[nodiscard]] bool IsPinnedShown(
 	not_null<const Dialogs::Entry*> entry,
 	FilterId filterId);
 
-// The sort key Telegram computed, unless this computer has an order for
-// the chat: pinned chats unknown to that order stay on top.
+// Telegram's sort key (pinned or by date) unless this computer decides.
 [[nodiscard]] uint64 ChatListSortKey(
 	not_null<const Dialogs::Entry*> entry,
 	FilterId filterId,
-	uint64 telegramSortKey);
+	uint64 telegramSortKey,
+	uint64 sortKeyByDate);
 
-// When Telegram refuses one more pinned chat in the main list.
-bool PinLocally(not_null<History*> history);
-
-// True when the chat was only pinned locally and nothing is left to do.
-bool UnpinLocally(not_null<Dialogs::Entry*> entry);
+// Pin (on top) or unpin a chat of the main list: whether it is pinned now.
+// Nothing for the other lists, Telegram does it.
+std::optional<bool> TogglePinLocally(not_null<Dialogs::Entry*> entry);
 
 // Dragging a pinned chat past its neighbour. False when Telegram does it.
 bool MovePinned(FilterId filterId, Dialogs::Key key1, Dialogs::Key key2);
-
-// Before Telegram saves the order of its pinned chats after a drag:
-// the chats pinned on Telegram take the order they have here.
-void SyncServerPinnedOrder(
-	not_null<Main::Session*> session,
-	Data::Folder *folder);
 
 } // namespace MikGram
