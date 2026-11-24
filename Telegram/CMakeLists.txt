@@ -1803,6 +1803,9 @@ PRIVATE
     mikgram/lang.h
     mikgram/local_pins.cpp
     mikgram/local_pins.h
+    mikgram/local_transcribe.cpp
+    mikgram/local_transcribe.h
+    mikgram/local_transcribe_speech.h
     mikgram/no_ads.h
     mtproto/config_loader.cpp
     mtproto/config_loader.h
@@ -2786,6 +2789,7 @@ if (APPLE)
         tray_accounts_menu.cpp
         media/view/media_view_metal_texture.mm
         media/streaming/media_streaming_native_frame_mac.mm
+        mikgram/local_transcribe_speech_mac.mm
     )
 else()
     nice_target_sources(Telegram ${src_loc}
@@ -2896,7 +2900,7 @@ elseif (APPLE)
         target_link_libraries(Telegram PRIVATE desktop-app::external_iconv)
     endif()
 
-    target_link_frameworks(Telegram PRIVATE CoreBluetooth)
+    target_link_frameworks(Telegram PRIVATE CoreBluetooth Speech)
     target_link_frameworks_weak(Telegram PRIVATE UserNotifications)
 
     set(icons_path ${CMAKE_CURRENT_SOURCE_DIR}/Telegram/Images.xcassets)

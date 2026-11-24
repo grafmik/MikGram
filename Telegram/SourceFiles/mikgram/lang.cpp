@@ -24,6 +24,9 @@ using Phrases = std::array<QString, int(Phrase::Count)>;
 		u"Banned chats"_q,
 		u"banned"_q,
 		u"No banned chats."_q,
+		u"macOS could not transcribe this message"_q,
+		u"Allow MikGram in System Settings > Privacy & Security > Speech Recognition"_q,
+		u"Speech recognition is unavailable for this language: turn on Dictation in System Settings > Keyboard"_q,
 	};
 	return result;
 }
@@ -42,6 +45,9 @@ using Phrases = std::array<QString, int(Phrase::Count)>;
 			u"Discussions bannies"_q,
 			u"banni"_q,
 			u"Aucune discussion bannie."_q,
+			u"macOS n'a pas pu transcrire ce message"_q,
+			u"Autorisez MikGram dans R\u00e9glages Syst\u00e8me > Confidentialit\u00e9 et s\u00e9curit\u00e9 > Reconnaissance vocale"_q,
+			u"Reconnaissance vocale indisponible pour cette langue : activez la Dict\u00e9e dans R\u00e9glages Syst\u00e8me > Clavier"_q,
 		} },
 		{ u"it"_q, Phrases{ u"Colore di sfondo"_q } },
 		{ u"nl"_q, Phrases{ u"Achtergrondkleur"_q } },

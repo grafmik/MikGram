@@ -30,6 +30,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "media/audio/media_audio.h"
 #include "media/player/media_player_float.h" // Media::Player::RoundPainter.
 #include "media/player/media_player_instance.h"
+#include "mikgram/local_transcribe.h"
 #include "storage/localstorage.h"
 #include "ui/chat/chat_style.h"
 #include "ui/effects/voice_once_particles.h"
@@ -505,9 +506,11 @@ QSize Document::countOptimalSize() {
 			|| _realParent->isScheduled()
 			|| _realParent->isAdminLogEntry()
 			|| (!session->premium()
+				&& !MikGram::TranscribesLocally(session)
 				&& !transcribes->freeFor(_realParent)
 				&& !transcribes->trialsSupport())
 			|| (!session->premium()
+				&& !MikGram::TranscribesLocally(session)
 				&& _data->duration() > transcribes->trialsMaxLengthMs())) {
 			voice->transcribe = nullptr;
 			voice->transcribeText = {};

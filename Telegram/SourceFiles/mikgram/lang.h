@@ -18,6 +18,9 @@ enum class Phrase {
 	BannedChats,
 	Banned,
 	NoBannedChats,
+	TranscribeFailed,
+	TranscribeDenied,
+	TranscribeUnavailable,
 
 	Count,
 };

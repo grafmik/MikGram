@@ -20,6 +20,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_app_config.h"
 #include "main/main_session.h"
 #include "main/main_session_settings.h"
+#include "mikgram/local_transcribe.h"
 #include "spellcheck/spellcheck_types.h"
 
 namespace Api {
@@ -185,6 +186,30 @@ void Transcribes::load(not_null<HistoryItem*> item) {
 		}
 	};
 	const auto id = item->fullId();
+	if (MikGram::TranscribesLocally(_session)) { // MikGram
+		auto &entry = _map.emplace(id).first->second;
+		entry.shown = true;
+		entry.failed = false;
+		entry.pending = true;
+		MikGram::TranscribeLocally(item, crl::guard(_session, [=](
+				QString text,
+				bool failed) {
+			if (failed) {
+				_map.remove(id);
+			} else {
+				auto &entry = _map[id];
+				entry.pending = false;
+				entry.result = text;
+			}
+			if (const auto item = _session->data().message(id)) {
+				if (!failed) {
+					toggleRound(item, _map[id]);
+				}
+				_session->data().requestItemResize(item);
+			}
+		}));
+		return;
+	}
 	const auto requestId = _api.request(MTPmessages_TranscribeAudio(
 		item->history()->peer->input(),
 		MTP_int(item->id)
