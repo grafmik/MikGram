@@ -25,8 +25,29 @@ struct Recognition {
 	SFSpeechRecognizer *recognizer = nil;
 	SFSpeechRecognitionTask *task = nil;
 	Fn<void(SpeechResult)> done;
+	QStringList parts;
 	bool finished = false;
 };
+
+[[nodiscard]] QString Join(const QStringList &parts) {
+	auto result = QString();
+	for (auto part : parts) {
+		part = part.trimmed();
+		if (part.isEmpty()) {
+			continue;
+		}
+		if (!result.isEmpty()) {
+			const auto last = result.back();
+			if (last != '.' && last != '!' && last != '?' && last != QChar(0x2026)) {
+				result += '.';
+			}
+			result += ' ';
+			part[0] = part[0].toUpper();
+		}
+		result += part;
+	}
+	return result;
+}
 
 void Finish(
 		const std::shared_ptr<Recognition> &state,
@@ -105,14 +126,16 @@ void Start(std::shared_ptr<Request> request) {
 		resultHandler:^(
 				SFSpeechRecognitionResult *result,
 				NSError *error) {
+		// Long audio comes as one result per sentence: only the last one is final.
+		if (result && (result.isFinal || result.speechRecognitionMetadata)) {
+			state->parts.push_back(QString::fromNSString(
+				result.bestTranscription.formattedString));
+		}
 		if (result && result.isFinal) {
-			Finish(state, {
-				.text = QString::fromNSString(
-					result.bestTranscription.formattedString),
-			});
+			Finish(state, { .text = Join(state->parts) });
 		} else if (error) {
-			if (error.code == kNoSpeechDetected) {
-				Finish(state, {});
+			if (!state->parts.isEmpty() || error.code == kNoSpeechDetected) {
+				Finish(state, { .text = Join(state->parts) });
 			} else {
 				Finish(state, {
 					.error = SpeechError::Failed,
