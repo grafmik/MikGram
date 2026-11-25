@@ -25,7 +25,7 @@ struct SpeechResult {
 void RecognizeSpeech(
 	std::vector<float> samples,
 	int frequency,
-	QString language,
+	QStringList languages,
 	Fn<void(SpeechResult)> done);
 
 } // namespace MikGram

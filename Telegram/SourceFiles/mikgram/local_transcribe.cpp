@@ -10,16 +10,22 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_document_media.h"
 #include "data/data_file_origin.h"
 #include "data/data_media_types.h"
+#include "history/history.h"
 #include "history/history_item.h"
+#include "history/view/history_view_element.h"
 #include "lang/lang_keys.h"
 #include "main/main_session.h"
 #include "media/audio/media_audio_ffmpeg_loader.h"
 #include "mikgram/lang.h"
 #include "mikgram/local_transcribe_speech.h"
+#include "spellcheck/platform/platform_language.h"
 #include "ui/toast/toast.h"
 
 namespace MikGram {
 namespace {
+
+constexpr auto kMinChatText = 20;
+constexpr auto kMaxChatText = 2000;
 
 struct Decoded {
 	std::vector<float> samples;
@@ -80,16 +86,44 @@ base::flat_map<FullMsgId, rpl::lifetime> &Downloads() {
 	return result;
 }
 
-[[nodiscard]] QString Language() {
-	const auto lang = Lang::Id().section('-', 0, 0).toLower();
-	const auto system = QLocale::system().name().replace('_', '-');
-	if (system.section('-', 0, 0).toLower() == lang
-		&& system.contains('-')) {
-		return system;
+// The sender's texts first: their voice messages are likely in that language.
+[[nodiscard]] QString ChatText(not_null<HistoryItem*> item) {
+	const auto sender = item->from();
+	auto own = QString();
+	auto others = QString();
+	const auto &blocks = item->history()->blocks;
+	for (auto i = blocks.rbegin(); i != blocks.rend(); ++i) {
+		const auto &messages = (*i)->messages;
+		for (auto j = messages.rbegin(); j != messages.rend(); ++j) {
+			const auto data = (*j)->data();
+			const auto &text = data->originalText().text;
+			auto &target = (data->from() == sender) ? own : others;
+			if (!text.isEmpty() && target.size() < kMaxChatText) {
+				target += text + '\n';
+			}
+		}
+		if (own.size() >= kMaxChatText) {
+			break;
+		}
 	}
-	return (lang == u"en"_q)
-		? u"en-US"_q
-		: (lang + '-' + lang.toUpper());
+	return (own.size() >= kMinChatText) ? own : (own + others);
+}
+
+[[nodiscard]] QStringList Languages(not_null<HistoryItem*> item) {
+	auto result = QStringList();
+	const auto add = [&](const QString &code) {
+		if (!code.isEmpty() && !result.contains(code)) {
+			result.push_back(code);
+		}
+	};
+	const auto text = ChatText(item);
+	if (text.size() >= kMinChatText) {
+		if (const auto id = Platform::Language::Recognize(text)) {
+			add(id.twoLetterCode());
+		}
+	}
+	add(Lang::Id().section('-', 0, 0).toLower());
+	return result;
 }
 
 void Fail(
@@ -102,8 +136,8 @@ void Fail(
 void Recognize(
 		const Core::FileLocation &location,
 		const QByteArray &bytes,
+		QStringList languages,
 		Fn<void(QString, bool)> done) {
-	const auto language = Language();
 	crl::async([=] {
 		auto decoded = Decode(location, bytes);
 		crl::on_main([=, decoded = std::move(decoded)]() mutable {
@@ -114,7 +148,7 @@ void Recognize(
 			RecognizeSpeech(
 				std::move(decoded.samples),
 				decoded.frequency,
-				language,
+				languages,
 				[=](SpeechResult result) {
 					switch (result.error) {
 					case SpeechError::None:
@@ -160,8 +194,9 @@ void TranscribeLocally(
 		return;
 	}
 	const auto view = document->createMediaView();
+	const auto languages = Languages(item);
 	const auto start = [=] {
-		Recognize(document->location(true), view->bytes(), done);
+		Recognize(document->location(true), view->bytes(), languages, done);
 	};
 	if (view->loaded()) {
 		start();
@@ -191,7 +226,7 @@ void TranscribeLocally(
 void RecognizeSpeech(
 		std::vector<float> samples,
 		int frequency,
-		QString language,
+		QStringList languages,
 		Fn<void(SpeechResult)> done) {
 	done({ .error = SpeechError::Unavailable });
 }

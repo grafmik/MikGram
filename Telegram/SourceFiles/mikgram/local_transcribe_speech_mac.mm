@@ -13,20 +13,41 @@ namespace MikGram {
 namespace {
 
 constexpr auto kNoSpeechDetected = 1110;
+constexpr auto kMaxCandidates = 3;
+constexpr auto kProbeSeconds = 20;
 
 struct Request {
 	std::vector<float> samples;
 	int frequency = 0;
-	QString language;
+	QStringList languages;
 	Fn<void(SpeechResult)> done;
+};
+
+struct Pass {
+	QStringList parts;
+	double confidence = 0.;
+	int words = 0;
+	SpeechError error = SpeechError::None;
+	QString details;
 };
 
 struct Recognition {
 	SFSpeechRecognizer *recognizer = nil;
 	SFSpeechRecognitionTask *task = nil;
-	Fn<void(SpeechResult)> done;
-	QStringList parts;
+	Fn<void(Pass)> done;
+	Pass pass;
 	bool finished = false;
+};
+
+struct Candidates {
+	~Candidates() {
+		for (NSLocale *locale : locales) {
+			[locale release];
+		}
+	}
+
+	std::vector<NSLocale*> locales;
+	std::vector<Pass> probes;
 };
 
 [[nodiscard]] QString Join(const QStringList &parts) {
@@ -49,14 +70,94 @@ struct Recognition {
 	return result;
 }
 
+[[nodiscard]] double Score(const Pass &pass) {
+	return pass.words ? (pass.confidence / pass.words) : 0.;
+}
+
+[[nodiscard]] QString Normalized(NSString *identifier) {
+	return QString::fromNSString(identifier).replace('_', '-').toLower();
+}
+
+[[nodiscard]] QString LanguageCode(NSString *identifier) {
+	return Normalized(identifier).section('-', 0, 0);
+}
+
+[[nodiscard]] bool OnDevice(NSLocale *locale) {
+	SFSpeechRecognizer *recognizer = [[SFSpeechRecognizer alloc]
+		initWithLocale:locale];
+	const auto result = recognizer && recognizer.supportsOnDeviceRecognition;
+	[recognizer release];
+	return result;
+}
+
+[[nodiscard]] NSLocale *SupportedLocale(const QString &language) {
+	auto tags = QStringList();
+	for (NSString *tag in [NSLocale preferredLanguages]) {
+		if (LanguageCode(tag) == language) {
+			tags.push_back(Normalized(tag));
+		}
+	}
+	tags.push_back(QLocale(language).name().replace('_', '-').toLower());
+
+	auto tagged = std::vector<NSLocale*>(tags.size(), nil);
+	NSLocale *other = nil;
+	for (NSLocale *locale in [SFSpeechRecognizer supportedLocales]) {
+		if (LanguageCode(locale.localeIdentifier) != language) {
+			continue;
+		}
+		const auto position = tags.indexOf(Normalized(locale.localeIdentifier));
+		if (position >= 0) {
+			tagged[position] = locale;
+		} else if (!other) {
+			other = locale;
+		}
+	}
+	// On the Mac first: the audio stays here, and it is much faster.
+	for (NSLocale *locale : tagged) {
+		if (locale && OnDevice(locale)) {
+			return locale;
+		}
+	}
+	for (NSLocale *locale : tagged) {
+		if (locale) {
+			return locale;
+		}
+	}
+	return other;
+}
+
+[[nodiscard]] std::vector<NSLocale*> Locales(const QStringList &languages) {
+	auto codes = languages;
+	for (NSString *tag in [NSLocale preferredLanguages]) {
+		const auto code = LanguageCode(tag);
+		if (!codes.contains(code)) {
+			codes.push_back(code);
+		}
+	}
+	auto result = std::vector<NSLocale*>();
+	for (const auto &code : codes) {
+		NSLocale *locale = SupportedLocale(code);
+		const auto known = locale && ranges::any_of(result, [&](NSLocale *l) {
+			return [l.localeIdentifier isEqualToString:locale.localeIdentifier];
+		});
+		if (locale && !known && int(result.size()) < kMaxCandidates) {
+			result.push_back([locale retain]);
+		}
+	}
+	return result;
+}
+
 void Finish(
 		const std::shared_ptr<Recognition> &state,
-		SpeechResult result) {
+		SpeechError error = SpeechError::None,
+		QString details = QString()) {
 	if (state->finished) {
 		return;
 	}
 	state->finished = true;
-	crl::on_main([=, result = std::move(result)] {
+	state->pass.error = error;
+	state->pass.details = std::move(details);
+	crl::on_main([=] {
 		const auto done = base::take(state->done);
 		if (state->task) {
 			[state->task release];
@@ -67,25 +168,24 @@ void Finish(
 			state->recognizer = nil;
 		}
 		if (done) {
-			done(result);
+			done(base::take(state->pass));
 		}
 	});
 }
 
-[[nodiscard]] SFSpeechRecognizer *CreateRecognizer(const QString &language) {
-	NSLocale *locale = [NSLocale localeWithLocaleIdentifier:
-		language.toNSString()];
-	SFSpeechRecognizer *result = [[SFSpeechRecognizer alloc]
-		initWithLocale:locale];
-	return result ? result : [[SFSpeechRecognizer alloc] init];
-}
-
-void Start(std::shared_ptr<Request> request) {
+void Recognize(
+		NSLocale *locale,
+		const std::vector<float> &samples,
+		size_t count,
+		int frequency,
+		Fn<void(Pass)> done) {
 	const auto state = std::make_shared<Recognition>();
-	state->done = std::move(request->done);
-	state->recognizer = CreateRecognizer(request->language);
+	state->done = std::move(done);
+	state->recognizer = locale
+		? [[SFSpeechRecognizer alloc] initWithLocale:locale]
+		: [[SFSpeechRecognizer alloc] init];
 	if (!state->recognizer || !state->recognizer.isAvailable) {
-		Finish(state, { .error = SpeechError::Unavailable });
+		Finish(state, SpeechError::Unavailable);
 		return;
 	}
 	SFSpeechAudioBufferRecognitionRequest *speech
@@ -99,27 +199,25 @@ void Start(std::shared_ptr<Request> request) {
 	}
 	AVAudioFormat *format = [[AVAudioFormat alloc]
 		initWithCommonFormat:AVAudioPCMFormatFloat32
-		sampleRate:request->frequency
+		sampleRate:frequency
 		channels:1
 		interleaved:NO];
-	const auto &samples = request->samples;
-	const auto chunk = size_t(request->frequency);
-	for (auto offset = size_t(0); offset < samples.size(); offset += chunk) {
-		const auto count = std::min(chunk, samples.size() - offset);
+	const auto chunk = size_t(frequency);
+	for (auto offset = size_t(0); offset < count; offset += chunk) {
+		const auto size = std::min(chunk, count - offset);
 		AVAudioPCMBuffer *buffer = [[AVAudioPCMBuffer alloc]
 			initWithPCMFormat:format
-			frameCapacity:AVAudioFrameCount(count)];
-		buffer.frameLength = AVAudioFrameCount(count);
+			frameCapacity:AVAudioFrameCount(size)];
+		buffer.frameLength = AVAudioFrameCount(size);
 		memcpy(
 			buffer.floatChannelData[0],
 			samples.data() + offset,
-			count * sizeof(float));
+			size * sizeof(float));
 		[speech appendAudioPCMBuffer:buffer];
 		[buffer release];
 	}
 	[format release];
 	[speech endAudio];
-	request->samples = {};
 
 	state->task = [[state->recognizer
 		recognitionTaskWithRequest:speech
@@ -128,23 +226,93 @@ void Start(std::shared_ptr<Request> request) {
 				NSError *error) {
 		// Long audio comes as one result per sentence: only the last one is final.
 		if (result && (result.isFinal || result.speechRecognitionMetadata)) {
-			state->parts.push_back(QString::fromNSString(
+			state->pass.parts.push_back(QString::fromNSString(
 				result.bestTranscription.formattedString));
+			for (SFTranscriptionSegment *segment
+					in result.bestTranscription.segments) {
+				state->pass.confidence += segment.confidence;
+				++state->pass.words;
+			}
 		}
 		if (result && result.isFinal) {
-			Finish(state, { .text = Join(state->parts) });
+			Finish(state);
 		} else if (error) {
-			if (!state->parts.isEmpty() || error.code == kNoSpeechDetected) {
-				Finish(state, { .text = Join(state->parts) });
+			if (!state->pass.parts.isEmpty()
+				|| error.code == kNoSpeechDetected) {
+				Finish(state);
 			} else {
-				Finish(state, {
-					.error = SpeechError::Failed,
-					.details = QString::fromNSString(error.localizedDescription),
-				});
+				Finish(
+					state,
+					SpeechError::Failed,
+					QString::fromNSString(error.localizedDescription));
 			}
 		}
 	}] retain];
 	[speech release];
+}
+
+void Done(const std::shared_ptr<Request> &request, const Pass &pass) {
+	const auto done = base::take(request->done);
+	done({
+		.text = Join(pass.parts),
+		.error = pass.error,
+		.details = pass.details,
+	});
+}
+
+void Probe(
+		std::shared_ptr<Request> request,
+		std::shared_ptr<Candidates> candidates) {
+	const auto index = candidates->probes.size();
+	const auto count = std::min(
+		request->samples.size(),
+		size_t(request->frequency) * kProbeSeconds);
+	if (index < candidates->locales.size()) {
+		Recognize(
+			candidates->locales[index],
+			request->samples,
+			count,
+			request->frequency,
+			[=](Pass pass) {
+				candidates->probes.push_back(std::move(pass));
+				Probe(request, candidates);
+			});
+		return;
+	}
+	auto best = 0;
+	for (auto i = 1; i != int(candidates->probes.size()); ++i) {
+		if (Score(candidates->probes[i]) > Score(candidates->probes[best])) {
+			best = i;
+		}
+	}
+	if (count == request->samples.size()) {
+		Done(request, candidates->probes[best]);
+		return;
+	}
+	Recognize(
+		candidates->locales[best],
+		request->samples,
+		request->samples.size(),
+		request->frequency,
+		[=](Pass pass) { Done(request, pass); });
+}
+
+void Start(std::shared_ptr<Request> request) {
+	auto candidates = std::make_shared<Candidates>();
+	candidates->locales = Locales(request->languages);
+	if (candidates->locales.size() > 1) {
+		Probe(std::move(request), std::move(candidates));
+		return;
+	}
+	const auto locale = candidates->locales.empty()
+		? nil
+		: candidates->locales.front();
+	Recognize(
+		locale,
+		request->samples,
+		request->samples.size(),
+		request->frequency,
+		[=](Pass pass) { Done(request, pass); });
 }
 
 } // namespace
@@ -152,12 +320,12 @@ void Start(std::shared_ptr<Request> request) {
 void RecognizeSpeech(
 		std::vector<float> samples,
 		int frequency,
-		QString language,
+		QStringList languages,
 		Fn<void(SpeechResult)> done) {
 	auto request = std::make_shared<Request>(Request{
 		.samples = std::move(samples),
 		.frequency = frequency,
-		.language = std::move(language),
+		.languages = std::move(languages),
 		.done = std::move(done),
 	});
 	const auto status = [SFSpeechRecognizer authorizationStatus];
