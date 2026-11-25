@@ -72,6 +72,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #ifndef TDESKTOP_DISABLE_SPELLCHECK
 #include "chat_helpers/spellchecker_common.h"
+#include "mikgram/sync.h"
 #endif // TDESKTOP_DISABLE_SPELLCHECK
 
 namespace Main {
@@ -277,6 +278,7 @@ Session::Session(
 	_api->requestNotifySettings(MTP_inputNotifyBroadcasts());
 
 	Core::App().downloadManager().trackSession(this);
+	MikGram::StartSync(this);
 	Tgw::StartStorage(this);
 
 	appConfig().value(

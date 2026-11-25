@@ -8,6 +8,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "data/data_types.h"
 
+namespace Main {
+class Session;
+} // namespace Main
+
 namespace Dialogs {
 class Entry;
 class Key;
@@ -35,6 +39,12 @@ namespace MikGram {
 
 // Pin (on top) or unpin a chat of the main list: whether it is pinned now.
 // Nothing for the other lists, Telegram does it.
+[[nodiscard]] std::optional<std::vector<uint64>> LocalPinsForSync(
+	not_null<Main::Session*> session);
+void ApplySyncedPins(
+	not_null<Main::Session*> session,
+	std::vector<uint64> order);
+
 std::optional<bool> TogglePinLocally(not_null<Dialogs::Entry*> entry);
 
 // Dragging a pinned chat past its neighbour. False when Telegram does it.

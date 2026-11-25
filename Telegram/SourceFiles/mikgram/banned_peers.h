@@ -13,6 +13,10 @@ class History;
 class HistoryItem;
 class PeerData;
 
+namespace Data {
+class Session;
+} // namespace Data
+
 namespace Window {
 class SessionController;
 } // namespace Window
@@ -45,6 +49,17 @@ template <typename Container>
 void RemoveBanned(Container &list) {
 	RemoveBanned(list, [](const auto &peer) { return peer->id; });
 }
+
+struct SyncedBan {
+	uint64 peerId = 0;
+	QString title;
+};
+[[nodiscard]] std::vector<SyncedBan> BannedForSync();
+void ApplySyncedBan(
+	not_null<Data::Session*> owner,
+	uint64 peerId,
+	bool banned,
+	const QString &title);
 
 void AddBanAction(
 	not_null<Window::SessionController*> controller,

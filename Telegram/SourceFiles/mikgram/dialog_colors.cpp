@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "history/history.h"
 #include "mikgram/lang.h"
+#include "mikgram/sync.h"
 #include "settings.h"
 #include "ui/painter.h"
 #include "ui/rp_widget.h"
@@ -69,21 +70,28 @@ void WriteColors() {
 	}
 }
 
-void SetDialogColor(not_null<PeerData*> peer, int index) {
+bool StoreDialogColor(uint64 key, int index) {
 	auto &colors = Colors();
-	const auto key = peer->id.value;
 	if (index < 0) {
 		if (!colors.remove(key)) {
-			return;
+			return false;
 		}
 	} else {
 		const auto i = colors.find(key);
 		if (i != end(colors) && i->second == index) {
-			return;
+			return false;
 		}
 		colors[key] = index;
 	}
 	WriteColors();
+	return true;
+}
+
+void SetDialogColor(not_null<PeerData*> peer, int index) {
+	if (!StoreDialogColor(peer->id.value, index)) {
+		return;
+	}
+	NoteColorChanged(peer->id.value);
 	if (const auto history = peer->owner().historyLoaded(peer)) {
 		history->updateChatListEntry();
 	}
@@ -274,6 +282,27 @@ void AddDialogColorAction(
 				peer));
 		},
 	});
+}
+
+std::vector<std::pair<uint64, int>> DialogColorsForSync() {
+	auto result = std::vector<std::pair<uint64, int>>();
+	for (const auto &[peerId, index] : Colors()) {
+		result.emplace_back(peerId, index);
+	}
+	return result;
+}
+
+void ApplySyncedDialogColor(
+		not_null<Data::Session*> owner,
+		uint64 peerId,
+		int index) {
+	if (!StoreDialogColor(peerId, index)) {
+		return;
+	}
+	if (const auto history = owner->historyLoaded(
+			PeerId(PeerIdHelper(peerId)))) {
+		history->updateChatListEntry();
+	}
 }
 
 } // namespace MikGram

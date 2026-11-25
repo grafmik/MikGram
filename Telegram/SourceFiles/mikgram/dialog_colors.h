@@ -11,11 +11,21 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 class PeerData;
 
+namespace Data {
+class Session;
+} // namespace Data
+
 namespace MikGram {
 
 [[nodiscard]] const std::vector<QColor> &DialogColorPalette();
 
 [[nodiscard]] int DialogColor(PeerId peerId);
+
+[[nodiscard]] std::vector<std::pair<uint64, int>> DialogColorsForSync();
+void ApplySyncedDialogColor(
+	not_null<Data::Session*> owner,
+	uint64 peerId,
+	int index);
 
 void AddDialogColorAction(
 	PeerData *peer,

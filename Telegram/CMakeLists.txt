@@ -1807,6 +1807,8 @@ PRIVATE
     mikgram/local_transcribe.h
     mikgram/local_transcribe_speech.h
     mikgram/no_ads.h
+    mikgram/sync.cpp
+    mikgram/sync.h
     mtproto/config_loader.cpp
     mtproto/config_loader.h
     mtproto/connection_abstract.cpp

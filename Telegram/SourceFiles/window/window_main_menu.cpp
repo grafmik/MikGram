@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "mikgram/banned_peers.h"
 #include "mikgram/lang.h"
+#include "mikgram/sync.h"
 
 #include "apiwrap.h"
 #include "base/event_filter.h"
@@ -718,6 +719,12 @@ void MainMenu::setupMenu() {
 			{ &st::menuIconBlock }
 		)->setClickedCallback([=] {
 			MikGram::ShowBannedBox(controller);
+		});
+		addAction(
+			rpl::single(MikGram::Text(MikGram::Phrase::SyncTitle)),
+			{ &st::menuIconQrCode }
+		)->setClickedCallback([=] {
+			MikGram::ShowSyncBox(controller);
 		});
 		addAction(
 			tr::lng_menu_calls(),

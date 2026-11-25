@@ -15,6 +15,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "dialogs/dialogs_row.h"
 #include "history/history.h"
 #include "main/main_session.h"
+#include "mikgram/sync.h"
 #include "settings.h"
 
 #include <QtCore/QJsonArray>
@@ -154,7 +155,7 @@ void WritePins() {
 	return result;
 }
 
-void Save(
+void Store(
 		not_null<Main::Session*> session,
 		std::vector<uint64> order,
 		std::vector<uint64> resort) {
@@ -171,6 +172,14 @@ void Save(
 			history->updateChatListSortPosition();
 		}
 	}
+}
+
+void Save(
+		not_null<Main::Session*> session,
+		std::vector<uint64> order,
+		std::vector<uint64> resort) {
+	Store(session, std::move(order), std::move(resort));
+	NotePinsChanged(session);
 }
 
 } // namespace
@@ -246,6 +255,26 @@ bool MovePinned(FilterId filterId, Dialogs::Key key1, Dialogs::Key key2) {
 	auto resort = order;
 	Save(session, std::move(order), std::move(resort));
 	return true;
+}
+
+std::optional<std::vector<uint64>> LocalPinsForSync(
+		not_null<Main::Session*> session) {
+	const auto pins = Find(session);
+	return (pins && pins->own)
+		? std::make_optional(pins->order)
+		: std::nullopt;
+}
+
+void ApplySyncedPins(
+		not_null<Main::Session*> session,
+		std::vector<uint64> order) {
+	auto resort = CurrentOrder(session);
+	for (const auto peerId : order) {
+		if (!ranges::contains(resort, peerId)) {
+			resort.push_back(peerId);
+		}
+	}
+	Store(session, std::move(order), std::move(resort));
 }
 
 } // namespace MikGram

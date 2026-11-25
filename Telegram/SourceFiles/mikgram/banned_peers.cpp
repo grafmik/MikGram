@@ -19,6 +19,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_keys.h"
 #include "main/main_session.h"
 #include "mikgram/lang.h"
+#include "mikgram/sync.h"
 #include "settings.h"
 #include "ui/layers/generic_box.h"
 #include "ui/rp_widget.h"
@@ -108,12 +109,14 @@ void Ban(not_null<PeerData*> peer) {
 	All()[peer->id.value] = Banned{ .title = peer->name() };
 	WriteBanned();
 	Applied(&peer->owner(), peer->id);
+	NoteBanChanged(peer->id.value);
 }
 
 void Unban(not_null<Data::Session*> owner, PeerId peerId) {
 	if (All().remove(peerId.value)) {
 		WriteBanned();
 		Applied(owner, peerId);
+		NoteBanChanged(peerId.value);
 	}
 }
 
@@ -219,6 +222,28 @@ void ShowBannedBox(not_null<Window::SessionController*> controller) {
 			});
 		}
 	}));
+}
+
+std::vector<SyncedBan> BannedForSync() {
+	auto result = std::vector<SyncedBan>();
+	for (const auto &[peerId, banned] : All()) {
+		result.push_back({ .peerId = peerId, .title = banned.title });
+	}
+	return result;
+}
+
+void ApplySyncedBan(
+		not_null<Data::Session*> owner,
+		uint64 peerId,
+		bool banned,
+		const QString &title) {
+	if (banned) {
+		All()[peerId] = Banned{ .title = title };
+	} else if (!All().remove(peerId)) {
+		return;
+	}
+	WriteBanned();
+	Applied(owner, PeerId(PeerIdHelper(peerId)));
 }
 
 } // namespace MikGram
