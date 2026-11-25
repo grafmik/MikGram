@@ -20,6 +20,8 @@ namespace MikGram {
 [[nodiscard]] const std::vector<QColor> &DialogColorPalette();
 
 [[nodiscard]] int DialogColor(PeerId peerId);
+[[nodiscard]] std::optional<QColor> DialogTint(PeerId peerId);
+[[nodiscard]] QColor DialogBg(PeerData *peer, QColor bg);
 
 [[nodiscard]] std::vector<std::pair<uint64, int>> DialogColorsForSync();
 void ApplySyncedDialogColor(

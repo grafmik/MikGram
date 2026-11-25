@@ -321,6 +321,7 @@ private:
 		QRect preview;
 		QRect badge;
 		QImage band;
+		QColor bg;
 		std::pair<uint64, uint64> userpic;
 		bool bandDirty = true;
 		bool video = false;

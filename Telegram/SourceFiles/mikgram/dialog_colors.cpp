@@ -12,6 +12,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mikgram/lang.h"
 #include "mikgram/sync.h"
 #include "settings.h"
+#include "ui/effects/animation_value.h"
 #include "ui/painter.h"
 #include "ui/rp_widget.h"
 #include "ui/widgets/menu/menu_item_base.h"
@@ -28,6 +29,7 @@ namespace MikGram {
 namespace {
 
 constexpr auto kNoColor = -1;
+constexpr auto kTintAlpha = 56;
 constexpr auto kSpacingRatio = 3;
 constexpr auto kPerRow = 5;
 
@@ -263,6 +265,26 @@ int DialogColor(PeerId peerId) {
 	const auto &colors = Colors();
 	const auto i = colors.find(peerId.value);
 	return (i != end(colors)) ? i->second : kNoColor;
+}
+
+std::optional<QColor> DialogTint(PeerId peerId) {
+	const auto index = DialogColor(peerId);
+	if (index < 0) {
+		return std::nullopt;
+	}
+	auto result = DialogColorPalette()[index];
+	result.setAlpha(kTintAlpha);
+	return result;
+}
+
+QColor DialogBg(PeerData *peer, QColor bg) {
+	const auto tint = peer ? DialogTint(peer->id) : std::nullopt;
+	if (!tint) {
+		return bg;
+	}
+	auto opaque = *tint;
+	opaque.setAlpha(255);
+	return anim::color(bg, opaque, kTintAlpha / 255.);
 }
 
 void AddDialogColorAction(

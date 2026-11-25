@@ -503,11 +503,8 @@ void PaintRow(
 	}
 	p.fillRect(geometry, bg);
 	if (history && !fakeRow && !context.active && !context.selected) {
-		const auto index = MikGram::DialogColor(history->peer->id);
-		if (index >= 0) {
-			auto tint = MikGram::DialogColorPalette()[index];
-			tint.setAlpha(56);
-			p.fillRect(geometry, tint);
+		if (const auto tint = MikGram::DialogTint(history->peer->id)) {
+			p.fillRect(geometry, *tint);
 		}
 	}
 	if (!(flags & Flag::TopicJumpRipple)) {

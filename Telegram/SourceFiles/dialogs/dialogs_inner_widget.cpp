@@ -74,6 +74,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "menu/menu_mark_as_read.h"
 #include "menu/menu_sponsored.h"
 #include "mikgram/banned_peers.h"
+#include "mikgram/dialog_colors.h"
 #include "mikgram/local_pins.h"
 #include "settings/settings_common.h"
 #include "storage/storage_account.h"
@@ -1314,8 +1315,11 @@ void InnerWidget::paintEvent(QPaintEvent *e) {
 						? history->peer->userpicUniqueKey(
 							row->userpicView())
 						: std::pair<uint64, uint64>();
+					cached.bg = MikGram::DialogBg(
+						history ? history->peer.get() : nullptr,
+						st::dialogsBg->c);
 					if (!cached.badge.isEmpty()) {
-						q.fillRect(cached.badge, st::dialogsBg);
+						q.fillRect(cached.badge, cached.bg);
 					}
 					_cachedRows[cacheKey] = std::move(cached);
 				});
@@ -3931,7 +3935,7 @@ void InnerWidget::paintAnimatedPreview(
 	}
 	if (cached.bandDirty) {
 		cached.bandDirty = false;
-		cached.band.fill(st::dialogsBg->c);
+		cached.band.fill(cached.bg);
 		auto q = Painter(&cached.band);
 		q.setInactive(p.inactive());
 		q.translate(-geometry.topLeft());
