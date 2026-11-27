@@ -31,6 +31,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "media/player/media_player_float.h" // Media::Player::RoundPainter.
 #include "media/player/media_player_instance.h"
 #include "mikgram/local_transcribe.h"
+#include "mikgram/summarize.h"
 #include "storage/localstorage.h"
 #include "ui/chat/chat_style.h"
 #include "ui/effects/voice_once_particles.h"
@@ -540,7 +541,7 @@ QSize Document::countOptimalSize() {
 				? tr::italic(tr::lng_audio_transcribe_long(tr::now))
 				: entry.failed
 				? tr::italic(tr::lng_attach_failed(tr::now))
-				: TextWithEntities{ entry.result }.append(
+				: (pending ? TextWithEntities{ entry.result } : MikGram::WithSummary(_realParent, { entry.result })).append( // MikGram
 					pending
 						? Ui::Text::LottieEmoji(descriptor)
 						: TextWithEntities());
@@ -561,6 +562,7 @@ QSize Document::countOptimalSize() {
 					pending
 						? Ui::Text::LottieEmojiContext(std::move(descriptor))
 						: Ui::Text::MarkedContext());
+				MikGram::SetSummaryLink(_realParent, voice->transcribeText, entry.result); // MikGram
 				hasTranscribe = true;
 				if (const auto skipBlockWidth = _parent->hasVisibleText()
 					? 0

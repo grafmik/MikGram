@@ -1807,6 +1807,8 @@ PRIVATE
     mikgram/local_transcribe.h
     mikgram/local_transcribe_speech.h
     mikgram/no_ads.h
+    mikgram/summarize.cpp
+    mikgram/summarize.h
     mikgram/sync.cpp
     mikgram/sync.h
     mtproto/config_loader.cpp
@@ -2980,6 +2982,13 @@ elseif (APPLE)
             COMMAND cp ${CRASHPAD_HANDLER} $<TARGET_FILE_DIR:Telegram>/../Helpers/
         )
     endif()
+    add_custom_command(TARGET Telegram
+    PRE_LINK
+        COMMAND mkdir -p $<TARGET_FILE_DIR:Telegram>/../Helpers
+        COMMAND xcrun --sdk macosx swiftc -O -target arm64-apple-macos26.0
+            ${src_loc}/mikgram/summarize_helper.swift
+            -o $<TARGET_FILE_DIR:Telegram>/../Helpers/MikGramSummarize
+    )
 else()
     nice_target_sources(Telegram ${res_loc}
     PRIVATE

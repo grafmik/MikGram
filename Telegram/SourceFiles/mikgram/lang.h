@@ -41,6 +41,10 @@ enum class Phrase {
 	SyncError,
 	SyncWrongKey,
 	SyncWorking,
+	Summarize,
+	SummaryTitle,
+	Summarizing,
+	SummaryFailed,
 
 	Count,
 };

@@ -47,6 +47,10 @@ using Phrases = std::array<QString, int(Phrase::Count)>;
 		u"Sync failed"_q,
 		u"This key is not for this account."_q,
 		u"Syncing\u2026"_q,
+		u"Summarize"_q,
+		u"Summary"_q,
+		u"Summarizing\u2026"_q,
+		u"Could not summarize: try again"_q,
 	};
 	return result;
 }
@@ -88,6 +92,10 @@ using Phrases = std::array<QString, int(Phrase::Count)>;
 			u"\u00c9chec de la synchro"_q,
 			u"Cette cl\u00e9 n'est pas pour ce compte."_q,
 			u"Synchronisation\u2026"_q,
+			u"R\u00e9sumer"_q,
+			u"R\u00e9sum\u00e9"_q,
+			u"R\u00e9sum\u00e9 en cours\u2026"_q,
+			u"R\u00e9sum\u00e9 impossible : r\u00e9essayer"_q,
 		} },
 		{ u"it"_q, Phrases{ u"Colore di sfondo"_q } },
 		{ u"nl"_q, Phrases{ u"Achtergrondkleur"_q } },
